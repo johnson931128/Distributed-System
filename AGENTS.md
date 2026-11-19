@@ -22,11 +22,11 @@
 ### 1.1 課程第一手來源（最高優先權）
 
 - 課程：**Distributed Systems — Fall 2026**，National Cheng Kung University，Prof. Hung-Chang Hsiao（蕭宏章）。
-- 主要教材：**重排後的 270 頁合併講義**，檔案名稱可為 `分散式系統資工系課程講義.pdf`。
-- 本地建議路徑：`references/private/Distributed_Systems_Fall_2026.pdf`（使用者自行放入；請勿假定該檔案已存在）。
-- 可補充的獨立來源：`Intro_Slides.pdf`（課程簡介 17 頁）。
+- 主要教材：`reference/整包.pdf`，已核對為 270 頁合併講義；P18、P41、P63 分別為 Logical Clocks、Fault Tolerance、ZooKeeper 封面。
+- 原文書：`reference/Distributed_Systems_4.pdf`，685 頁；van Steen 與 Tanenbaum，*Distributed Systems*，4th edition，題名頁 Version 4.03x（February 2025）。原文書實體頁碼須標為「原文書 PDF P…」。版本內部差異見 `reference/README.md`。
+- 課程簡介直接使用合併講義 P1–P17；目前未提供獨立 `Intro_Slides.pdf`。
 - 若 PDF 尚未放入 Repository，Agent 應先檢查使用者提供的可讀檔案與工作環境；取得明確原始檔後再做依據投影片的整理。
-- **公開 Repo 不應直接加入未確認可再散布的課程 PDF。** 建議在 `.gitignore` 中忽略 `references/private/`，將筆記與自製圖表公開，原始講義僅留本機。
+- **公開 Repo 不應直接加入未確認可再散布的 PDF。** 在 `.gitignore` 中忽略 `reference/*.pdf`，並保留 `references/private/` 的舊路徑保護；原始教材僅留本機。
 - **頁碼一律使用重排後合併 PDF 的實體頁碼 P1–P270（1-based），不是原始合併檔或各投影片底部的 deck page。**
 
 ### 1.2 引用格式
@@ -72,9 +72,9 @@
 
 | 順序 | 投影片範圍 | 講義章節 | 筆記路徑 | 狀態 |
 | --- | --- | --- | --- | --- |
-| 00 | P1–P17 | Course Introduction | `notes/00-course-introduction.md` | 已學習，待系統化整理 |
-| 01 | P18–P40 | Logical Clocks, Global States, & Checkpointing | `notes/01-logical-clocks-checkpointing.md` | 已學習，待系統化整理 |
-| 02 | P41–P62 | Fault Tolerance & Paxos Consensus Algorithm（含 Multi-Paxos、Raft） | `notes/02-fault-tolerance-paxos-raft.md` | 已學習，待系統化整理 |
+| 00 | P1–P17 | Course Introduction | `notes/00-course-introduction.md` | 已學習，已撰寫 |
+| 01 | P18–P40 | Logical Clocks, Global States, & Checkpointing | `notes/01-logical-clocks-checkpointing.md` | 已學習，已撰寫 |
+| 02 | P41–P62 | Fault Tolerance & Paxos Consensus Algorithm（含 Multi-Paxos、Raft） | `notes/02-fault-tolerance-paxos-raft.md` | 已學習，已撰寫 |
 | 03 | P63–P89 | Distributed Coordination Services (ZooKeeper) | `notes/03-zookeeper.md` | 待學習，從 P63 開始 |
 | 04 | P90–P117 | Peer-to-Peer Computing (Overlay Networks) | `notes/04-peer-to-peer-gossip.md` | 待學習 |
 | 05 | P118–P155 | Data Consistency, Replication & Distributed Transactions | `notes/05-consistency-replication-transactions.md` | 待學習 |
@@ -90,14 +90,17 @@ Distributed-System/
 ├── AGENTS.md
 ├── README.md                        # GitHub 入口、章節導覽、進度
 ├── notes/
+│   ├── README.md                    # 集中教材資訊、進度與導覽
 │   ├── 00-course-introduction.md
 │   ├── 01-logical-clocks-checkpointing.md
 │   ├── 02-fault-tolerance-paxos-raft.md
 │   └── ...                         # 後續依上表逐章新增
 ├── assets/
 │   └── diagrams/                   # 必要時存放自製 SVG／PNG；優先內嵌 Mermaid
-└── references/
-    └── private/                    # 本地課程 PDF；不提交公開 GitHub
+└── reference/
+    ├── 整包.pdf                     # 本地講義；不提交
+    ├── Distributed_Systems_4.pdf     # 本地原文書；不提交
+    └── README.md                    # 教材核對紀錄
 ```
 
 - `README.md` 應提供章節名稱、投影片範圍、學習進度、GitHub 相對路徑、對應 HackMD URL（若已知）；未知的 HackMD URL 寫 `待連結`，不可編造。
@@ -122,9 +125,6 @@ Distributed-System/
 ```markdown
 # Chapter NN — 中文章名（English Title）
 
-> 課程依據：NCKU Distributed Systems, Fall 2026, Pxx–Pyy
-> 學習狀態：已學習／整理中／待學習
-
 ## 本章要解決什麼問題？
 ## 核心概念與必要前提
 ## 系統架構、角色與資料流
@@ -139,7 +139,7 @@ Distributed-System/
 ## 參考資料與投影片對應
 ```
 
-此為參考骨架，應依章節實質內容調整，不得為湊版面填寫不相干段落。**完整的推演與解釋放在前面，速查表放在後面。**
+此為參考骨架，應依章節實質內容調整，不得為湊版面填寫不相干段落。章首教材與狀態資訊集中至 `notes/README.md`；具體引用放在各主要小節。**完整的推演與解釋放在前面，速查表放在後面。**
 
 ### 3.3 深度標準（不可省略）
 
@@ -229,7 +229,7 @@ Distributed-System/
 
 ## 8. 首次執行建議（Codex 任務優先級）
 
-1. 建立 `README.md` 章節索引及進度表；建立 `notes/`、`assets/diagrams/` 結構；將 `references/private/` 加入 `.gitignore`。
+1. 建立 `README.md` 章節索引及進度表；建立 `notes/`、`assets/` 結構；將 `reference/*.pdf` 加入 `.gitignore`。
 2. 找到並核對重排後的 270 頁講義；若無法取得來源，停止宣稱「依據 PDF 完整整理」，明確列出缺件。
 3. 優先寫作 Chapter 01（P18–P40），建立 Logical Clock、Vector Clock、Consistent Cut、Chandy–Lamport Snapshot、Rollback Recovery 的完整推演。
 4. 接著寫 Chapter 02（P41–P62），詳述 Paxos 三角色完整互動、競爭提案、Adoption、Multi-Paxos／Raft 比較。
@@ -237,3 +237,23 @@ Distributed-System/
 6. 逐章確認內容、圖表與來源；分批小 commit，最後列出完成檔案、頁碼與尚未完成的地方。
 
 **核心品質原則：不是把 Slide 變成另一份 Slide；而是把 Slide 擴寫成能用來推導、除錯、設計與複習的完整工程筆記。**
+
+## 9. 後續整理與編碼查核
+
+- 各篇章首只保留標題，直接進入正文；課程身份、教材範圍、學習狀態、通用來源層級說明、上下章與 GitHub 備援導覽集中於 `notes/README.md`。各節具體頁碼與引用仍留在正文，不在章首重複專案資訊。
+- 詳細頁序與來源指紋見 `reference/README.md`；更換 PDF 後重新核對。
+- 英文單選題須附答案及每個選項的解析；重要演算法先完整推演，再提供速查。
+- P60 原例是 `(10, X)`；`(12, Y)` 須另標為教學補充。Raft 的完整 RPC、日誌與安全性條件屬 P62 延伸，不冒充投影片原文。
+- Markdown 一律以 UTF-8 儲存。Windows PowerShell 的文字管線可能將傳入 Python 的非 ASCII 字元替換成問號；避免使用未明確指定 UTF-8 的管線寫入中文。寫入後重新讀取並檢查內容。
+
+## 10. HackMD 與 GitHub 雙平台相容性（必須遵守）
+
+1. 所有提交至公開 Repository 的圖片統一放在 `assets/`，不散放於其他目錄。
+2. Markdown 圖片使用 `https://raw.githubusercontent.com/johnson931128/Distributed-System/main/assets/檔名` 格式的完整 URL，不使用相對圖片路徑或本機路徑。檔名宜使用 ASCII，並保持大小寫一致。
+3. 技術圖優先使用兩平台相容的 Mermaid 語法，避免平台專屬插件與初始化設定；SVG 顯示異常時匯出 PNG 備援，同樣放入 `assets/` 並使用完整 raw URL。
+4. 檢查 Markdown 表格、公式、圖片、Mermaid 和跨章節連結在 GitHub／HackMD 的相容性。公式須定義符號，關鍵條件另提供文字或行內程式碼版本。GitHub 章節導覽可保留相對連結；HackMD 使用已知 Note URL，或完整 GitHub 文件連結作備援，不編造 Note URL。
+5. 所有圖片必須先提交到 GitHub 後再驗證外部顯示；僅有本機 commit 或本機渲染不算外部驗證。尚未推送、raw URL 無法讀取或尚未在平台開啟時，須標示未驗證。本條本身不授權額外 push／發布操作。
+6. HackMD 新建筆記時，若 GitHub 檔案已存在，應使用 **Versions and GitHub Sync → Pull from GitHub**，禁止以空白筆記 Push 覆蓋內容。已有人工編修者先備份、比較，再同步。
+7. 所有圖片須附圖說，並記錄來源 URL、作者／組織、授權條件與必要署名；自製圖註明自製及技術依據。授權未確認者不提交，以原創圖替代。
+
+驗證回報須分開列出「本機語法／渲染」「GitHub 實際顯示」「HackMD 實際顯示」，未執行者保留未驗證狀態。
