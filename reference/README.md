@@ -94,3 +94,45 @@ SHA-256 cc3e33241bd6c9d54eb987fedc655206e5548667d68184d6b5cb76a2d127b408
 ```
 
 兩份 PDF 留在本機，不提交公開 Repository。
+
+## 已下載的引用論文
+
+下載日期：2026-11-19。以下 8 篇涵蓋目前 `notes/` 實際引用的所有論文 PDF URL；下載自作者、研究機構或原研究團隊的公開來源。原始檔直接存於本目錄，均受 `reference/*.pdf` 忽略規則保護。公開索引保留來源連結，不依賴本機 PDF 連結。
+
+| 本機檔名 | 論文與下載來源 | PDF 實體頁數 | 對應筆記 |
+| --- | --- | --- | --- |
+| `lamport-1978-time-clocks.pdf` | Lamport，1978，[Time, Clocks, and the Ordering of Events in a Distributed System](https://lamport.azurewebsites.net/pubs/time-clocks.pdf) | 8 | Chapter 01：事件偏序、Logical Clock |
+| `chandy-lamport-1985-distributed-snapshots.pdf` | Chandy、Lamport，1985，[Distributed Snapshots: Determining Global States of Distributed Systems](https://lamport.azurewebsites.net/pubs/chandy.pdf) | 13 | Chapter 01：Marker、Snapshot |
+| `netzer-xu-1993-consistent-global-snapshots.pdf` | Netzer、Xu，1993，[Necessary and Sufficient Conditions for Consistent Global Snapshots](https://cs.brown.edu/research/pubs/techreports/reports/93/cs93-32.pdf) | 13 | Chapter 01：Z-Path、Z-Cycle |
+| `lamport-2001-paxos-made-simple.pdf` | Lamport，2001，[Paxos Made Simple](https://lamport.azurewebsites.net/pubs/paxos-simple.pdf) | 14 | Chapter 02：Paxos 核心與狀態機 |
+| `lamport-1998-part-time-parliament.pdf` | Lamport，1998，[The Part-Time Parliament](https://lamport.azurewebsites.net/pubs/lamport-paxos.pdf) | 33 | Chapter 02：Paxos 歷史來源 |
+| `fischer-lynch-paterson-1985-impossibility-of-consensus.pdf` | Fischer、Lynch、Paterson，1985，[Impossibility of Distributed Consensus with One Faulty Process](https://groups.csail.mit.edu/tds/papers/Lynch/jacm85.pdf) | 9 | Chapter 02：FLP |
+| `ongaro-ousterhout-2014-raft-extended.pdf` | Ongaro、Ousterhout，2014，[In Search of an Understandable Consensus Algorithm（Extended Version）](https://raft.github.io/raft.pdf) | 18 | Chapter 00／02：Raft |
+| `decandia-et-al-2007-dynamo.pdf` | DeCandia 等，2007，[Dynamo: Amazon's Highly Available Key-value Store](https://cdn.amazon.science/ac/1d/eb50c4064c538c8ac440ce6a1d91/dynamo-amazons-highly-available-key-value-store.pdf) | 16 | Chapter 01：Vector Clock 的版本管理應用 |
+
+每檔已檢查 PDF 檔頭、可開啟性、頁數與開頭頁面的題名資訊。這裡的頁數包含封面及目錄，與論文印刷頁碼可能不同；也不是課程講義 P1–P270 的引用系統。下載不代表額外完成全文研讀，筆記所用範圍仍以各章的來源說明為準。
+
+八篇的首末頁皆可渲染。Netzer–Xu 原始檔以 pypdf 開啟時出現部分 object offset 警告，仍可讀取 13 頁；已另以 PyMuPDF 渲染並檢視首末頁，保留下載原檔與其雜湊，未重新產生或覆寫 PDF。
+
+這些檔案供本機閱讀，未確認可公開再散布，故不加入 Git。Flink、etcd、ZooKeeper 等 HTML 官方文件保留線上引用，不另轉成論文 PDF。
+
+### 論文來源指紋
+
+```text
+lamport-1978-time-clocks.pdf
+SHA-256 c55e7cab4230aa3d7126748a149b2db6f0d7a67296d5eccfdd50a210299a96b2
+chandy-lamport-1985-distributed-snapshots.pdf
+SHA-256 285e71bf56470620ff6080be39a416ea5de0ec855750983f50471712226b1d6a
+netzer-xu-1993-consistent-global-snapshots.pdf
+SHA-256 b6509c75dc8720b0dcc226f6b93fca75315c7e024a9da5e12f6c4d864dd48ba6
+lamport-2001-paxos-made-simple.pdf
+SHA-256 c83b5141257730d6fd20097ef17ebd02a02dfcb1809bad5873b7739659bb3f2b
+lamport-1998-part-time-parliament.pdf
+SHA-256 cd9544e9615bcd417a2c10063671cecca0b28ad4bc5db3f64467a83ecc7028d3
+fischer-lynch-paterson-1985-impossibility-of-consensus.pdf
+SHA-256 80e1c33be45362d6ce0eeaba0259939df16eaff592cd612d42d783e4686c82b7
+ongaro-ousterhout-2014-raft-extended.pdf
+SHA-256 5a5c679b6a7c88007faeff8c3eef19a77e9e5caa8bd7390922584fe8ecf0ce1f
+decandia-et-al-2007-dynamo.pdf
+SHA-256 5cacd624cd7bfd37e3d22e04d8c2e347a49579d2927dbb06f40a89c0bcd40bd4
+```
