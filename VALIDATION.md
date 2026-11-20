@@ -1,6 +1,6 @@
 # 筆記驗證紀錄
 
-日期：2026-11-19。範圍為講義 P1–P62 的三章筆記及其索引、規範、來源紀錄。**撰寫完成、本機驗證、線上雙平台驗收是三個不同狀態。**
+本檔保留分批驗證紀錄：第 1–5 節為 2026-11-19 的 P1–P62 批次；第 6 節起為 2026-11-20 的 P63–P117 批次。舊表的「當次未展開／未 push」是歷史狀態，不能取代後續紀錄。**撰寫完成、本機驗證、線上雙平台驗收是三個不同狀態。**
 
 ## 1. 教材與內容核對
 
@@ -73,3 +73,53 @@ Dynamo 論文與 Flink 2.1 官方資料另作 Chapter 01 的實際應用補充�
 | P63 起完整筆記 | 未展開 | 下一次從 ZooKeeper 封面與對應教材重新閱讀 |
 
 此紀錄不代表已完成線上雙平台驗收，也不代表原始協定的所有實作細節均已測試。
+
+## 6. 2026-11-20：Chapter 03／04 的教材與技術核對
+
+新增筆記為 `notes/03-zookeeper.md`（P63–P89）與 `notes/04-peer-to-peer-gossip.md`（P90–P117）。已重新讀取此 55 頁文字，並檢視 P67、P78、P84、P88、P103、P106、P107、P109、P110、P112、P116 的渲染圖。P118 只確認下一章封面，未展開內容。
+
+核對重點包括四投票者的 quorum 基數、ZAB 與交易 2PC 的界線、Session／TCP、標準 Watch 與漏通知競爭、sync 語義限制、Gossip 單輪條件期望與近似、Chord successor／finger、CFS 原始唯讀語義與可變資料的共識延伸。差異逐項列在 [教材紀錄](reference/README.md)。
+
+官方文件以 ZooKeeper 3.9.4 固定版本核對；新增七篇論文已下載至本機 `reference/`，檔頭、題名、頁數、可讀文字與 SHA-256 均已記錄。只引用實際閱讀的相關範圍，不宣稱已重現所有論文實驗與證明。
+
+13 個新章節的唯一外部引用 URL 中，12 個以 Python HTTP GET 成功取得；Microsoft 的 Sybil PDF 對該 HTTP client 回傳 403，但已以 Windows Invoke-WebRequest 成功下載並核對原論文。沒有關閉 TLS 憑證驗證；Cornell 的 PDF 曾在 Python client 遇到憑證鏈問題，改用系統信任憑證的 Windows 下載方式後取得。這些差異不被隱藏為「所有工具皆可讀取」。
+
+## 7. 2026-11-20：有限算例驗證
+
+實際執行：
+
+```text
+python tools/verify-coordination-p2p.py
+```
+
+輸出：
+
+```text
+PASS: quorum count, CAS, 15 lock queues, predecessor races and fencing example
+PASS: seven-row Gossip table, exact finite-round expectations, six-node dissemination
+PASS: CAN split, area conservation and 400 coordinate ownership checks
+PASS: Chord fingers, 384 lookups, wraparound, single join and transferred keys
+Finite examples passed; no live cluster, full protocol proof or arbitrary churn test.
+```
+
+Gossip 除核對正文數值表，也枚舉 N=2–5 的單輪 partner 選擇，比對有限 N 的條件期望，沒有把隨機試跑的結果當成公式證明。Chord 對六個起點、全部 64 個 keys 驗證靜態 ring 的 owner，另核算 wraparound 與 N15 加入後需移交的 keys 11–15。CAN 用 400 個座標點檢查分裂後唯一 owner 與面積守恆，另測切分邊界。
+
+ZooKeeper 部分驗證的是有限隊列、CAS 與前驅消失的教學交錯；不模擬真實 ZAB、網路、SDK、Session Expiration 或持久化。因此不將「算例通過」稱為分散式鎖實作已驗收。原 `python tools/verify-examples.py` 也已重跑，Chapter 01／02 的既有算例全部通過。
+
+## 8. 2026-11-20：本機渲染與尚未完成的驗收
+
+仍以 markdown-it 與 headless Microsoft Edge／Mermaid 檢查語法與本機預覽；所有新圖是內嵌原創 Mermaid，沒有新增公開 SVG／PNG 或外部圖片。
+
+| 項目 | 本批結果 |
+| --- | --- |
+| 新增英文單選題 | ZooKeeper 8 題、P2P 9 題，共 17 題；每題均含 A–D 解析 |
+| 新增 Mermaid | 9 圖（Chapter 03 四圖、Chapter 04 五圖），全部成功解析、渲染並逐張檢視 |
+| 桌面預覽 | 1280px 下兩章無頁面水平溢出，表格欄數一致，沒有 browser pageerror |
+| 手機預覽 | 390px 下 ZooKeeper 的部分表格最小寬度約 466px，需水平捲動；P2P 無頁面水平溢出，但寬時序圖仍須確認放大可讀性 |
+| 文字與導覽 | UTF-8、fence、圖片 URL 規則與本機連結存在性檢查通過；章首保留標題並直接進正文 |
+| GitHub 實際顯示 | 新增兩章 NOT_RUN；Chapter 00–02 曾於前批推送，但不能據此宣稱這次新章節已在線上驗收 |
+| HackMD 實際顯示 | NOT_RUN；仍無 Note URL，需從 GitHub 已存在檔案 Pull，禁止空白 Note Push |
+| 真實服務／網路故障注入 | NOT_RUN；未啟動 ZooKeeper、CAN、Chord、Gossip 或 Web3 部署 |
+| 後續章節 | P118 起未展開；使用者閱讀完成狀態未自動前進 |
+
+公開索引更新與 PDF 存檔分開；所有 `reference/*.pdf` 均留在本機。提交前另檢查 staged paths、diff 與忽略規則，避免將教材與下載論文納入 Git。

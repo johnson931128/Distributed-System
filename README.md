@@ -2,7 +2,7 @@
 
 將國立成功大學 Prof. Hung-Chang Hsiao 的 Distributed Systems（Fall 2026）講義擴寫成可推演、除錯與比較設計的工程筆記。使用繁體中文與 American English 技術名詞；以完整協定、數值案例、故障反例與附解析的英文單選題為主。
 
-**本次範圍 P1–P62 已撰寫；P63 為 ZooKeeper 起點，尚未展開。** [筆記目錄](notes/README.md)集中列出教材資訊、來源層級、學習狀態與上下章導覽；各篇直接進入技術內容。
+**P1–P117 已撰寫：新增 ZooKeeper（P63–P89）與 P2P／Gossip（P90–P117）。** 使用者已確認的學習進度仍為 P1–P62；新增兩章標為已整理、待閱讀。下一個整理單元從 P118 開始。[筆記目錄](notes/README.md)集中列出教材資訊、來源層級、學習狀態與上下章導覽；各篇直接進入技術內容。
 
 ## 章節索引與進度
 
@@ -11,8 +11,8 @@
 | 00 Course Introduction | P1–P17 | [課程簡介](notes/00-course-introduction.md) | 已學習／已撰寫 | 待連結 |
 | 01 Logical Clocks, Global States & Checkpointing | P18–P40 | [邏輯時鐘與回復](notes/01-logical-clocks-checkpointing.md) | 已學習／已撰寫 | 待連結 |
 | 02 Fault Tolerance, Paxos & Raft | P41–P62 | [容錯與共識](notes/02-fault-tolerance-paxos-raft.md) | 已學習／已撰寫 | 待連結 |
-| 03 ZooKeeper | P63–P89 | 規劃中 | 待學習 | 待連結 |
-| 04 P2P & Gossip | P90–P117 | 規劃中 | 待學習 | 待連結 |
+| 03 ZooKeeper | P63–P89 | [分散式協調服務](notes/03-zookeeper.md) | 已整理／待閱讀 | 待連結 |
+| 04 P2P & Gossip | P90–P117 | [P2P、Gossip 與 DHT](notes/04-peer-to-peer-gossip.md) | 已整理／待閱讀 | 待連結 |
 | 05 Consistency, Replication & Transactions | P118–P155 | 規劃中 | 待學習 | 待連結 |
 | 06 LevelDB & HBase | P156–P182 | 規劃中 | 待學習 | 待連結 |
 | 07 HDFS, MapReduce, YARN & Spark | P183–P210 | 規劃中 | 待學習 | 待連結 |
@@ -35,7 +35,7 @@
 - Ongaro、Ousterhout，[Raft Extended Version](https://raft.github.io/raft.pdf)。
 - [原文書作者頁](https://www.distributed-systems.net/index.php/books/ds4/)、[Raft 資源](https://raft.github.io/)、[etcd v3.6 Learner 文件](https://etcd.io/docs/v3.6/learning/design-learner/)。
 
-實際使用的頁碼、章節與補充範圍列於各篇，查閱日期為 2026-11-19。
+本次兩章另使用 [ZooKeeper 3.9.4 文件](https://zookeeper.apache.org/doc/r3.9.4/zookeeperProgrammers.html)、ZooKeeper／Gossip／CAN／Chord／CFS 的原始論文，以及 Chord 後續正確性研究；完整書目與本機下載對照見 [教材紀錄](reference/README.md)。各篇列出實際使用範圍與查閱日期；Chapter 00–02 為 2026-11-19，Chapter 03–04 為 2026-11-20。
 
 ## GitHub ↔ HackMD 使用方式
 
@@ -53,4 +53,4 @@ GitHub 是版本控制來源，HackMD 用於閱讀、註解與分享；每篇 No
 
 教材文字與指定圖表已核對；本機驗證項目及實際結果記錄於 [驗證紀錄](VALIDATION.md)。本機渲染、GitHub 實際顯示、HackMD 實際顯示分開回報，不以語法檢查代替線上驗收。
 
-後續：取得授權後發布；逐篇連結 HackMD 並驗收導覽與圖表；從 P63 重新閱讀 ZooKeeper；整理 P145、P205、P207、P208 前確認教材遺失圖形資源的解析警告。未展開的章節不建立空白檔案，也不標示為完成。
+Chapter 00–02 已曾推送至 GitHub；新增兩章的提交／線上驗收狀態見驗證紀錄。後續逐篇連結 HackMD 並驗收導覽與圖表；取得明確任務後從 P118 整理 Consistency。整理 P145、P205、P207、P208 前仍需確認教材遺失圖形資源的解析警告。未展開的章節不建立空白檔案，也不標示為完成。

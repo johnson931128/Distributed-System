@@ -4,7 +4,7 @@
 > Language: 繁體中文（zh-TW），技術名詞保留英文；英文術語首次出現時附中文說明。  
 > Main objective: 將國立成功大學 2026 Fall Distributed Systems 課程投影片，擴充成可供長期複習、理解原理、推演演算法與比較系統設計的技術筆記。  
 > Target readers: 已具備作業系統、演算法、計算機網路及程式開發基礎的資訊／工程學生。  
-> Current progress: 課程投影片 **P1–P62 已學習；P63（ZooKeeper 封面）為下一單元起點，尚未視為完成**。
+> Current progress: 使用者已確認 **P1–P62 已學習，P63 為待閱讀起點**；筆記已整理至 **P117**，Chapter 03／04 待使用者閱讀。下一個整理單元為 P118，未自動展開。
 
 ## 0. Agent 工作方式（必須遵守）
 
@@ -75,8 +75,8 @@
 | 00 | P1–P17 | Course Introduction | `notes/00-course-introduction.md` | 已學習，已撰寫 |
 | 01 | P18–P40 | Logical Clocks, Global States, & Checkpointing | `notes/01-logical-clocks-checkpointing.md` | 已學習，已撰寫 |
 | 02 | P41–P62 | Fault Tolerance & Paxos Consensus Algorithm（含 Multi-Paxos、Raft） | `notes/02-fault-tolerance-paxos-raft.md` | 已學習，已撰寫 |
-| 03 | P63–P89 | Distributed Coordination Services (ZooKeeper) | `notes/03-zookeeper.md` | 待學習，從 P63 開始 |
-| 04 | P90–P117 | Peer-to-Peer Computing (Overlay Networks) | `notes/04-peer-to-peer-gossip.md` | 待學習 |
+| 03 | P63–P89 | Distributed Coordination Services (ZooKeeper) | `notes/03-zookeeper.md` | 已整理，待閱讀 |
+| 04 | P90–P117 | Peer-to-Peer Computing (Overlay Networks) | `notes/04-peer-to-peer-gossip.md` | 已整理，待閱讀 |
 | 05 | P118–P155 | Data Consistency, Replication & Distributed Transactions | `notes/05-consistency-replication-transactions.md` | 待學習 |
 | 06 | P156–P182 | LevelDB and HBase: Distributed Storage Engines | `notes/06-leveldb-hbase.md` | 待學習 |
 | 07 | P183–P210 | Distributed Storage and Resource Management（HDFS、MapReduce、YARN、Spark） | `notes/07-hdfs-mapreduce-yarn-spark.md` | 待學習 |
@@ -257,3 +257,10 @@ Distributed-System/
 7. 所有圖片須附圖說，並記錄來源 URL、作者／組織、授權條件與必要署名；自製圖註明自製及技術依據。授權未確認者不提交，以原創圖替代。
 
 驗證回報須分開列出「本機語法／渲染」「GitHub 實際顯示」「HackMD 實際顯示」，未執行者保留未驗證狀態。
+
+## 11. Chapter 03／04 的來源與語義查核
+
+- 使用者 2026-11-20 已明確授權向下整理兩章：P63–P89、P90–P117；P118 起仍需另行指示。筆記整理進度與使用者已學習進度分開。
+- ZooKeeper 以 3.9.4 官方文件核對：Session 不等於單次 TCP；標準 Watch 是一次性失效通知；sync 並非無條件 quorum read；外部資源另需處理過期 lock holder。保留教材簡化並標明技術補充。
+- Chord 的 key owner、finger start 與 routing hop 分開；Gossip 的單輪期望、大 N 近似、隨機執行與訊息成本分開。CFS 原始一般 Client 唯讀，P112 為可變資料共識的設計延伸，不說成 CFS 所有讀寫都跑 Paxos。
+- 對原始 Chord maintenance 的一般收斂宣稱須考慮後續正確性研究與勘誤，不把單一加入圖當成任意 churn 的證明。新增論文留在 `reference/` 且不提交 PDF，公開索引記錄來源與雜湊。
