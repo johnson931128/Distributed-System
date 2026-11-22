@@ -1,56 +1,29 @@
 # Chapter 04 — 對等網路、Gossip 與分散式雜湊表（Peer-to-Peer Computing & Overlay Networks）
 
-## 1. 本章的問題：沒有全域目錄，要去哪裡找資料？
+## 1. 從一個檔案請求看懂 P2P 與 Overlay
 
 > [課程講義] P90–P94：從伺服器叢集走向動態、分散的 peers。
 
-**對等網路（Peer-to-Peer Network，P2P）** 讓參與者同時貢獻與使用儲存、運算或傳輸資源。它改變責任分工，卻不會自動解決尋址、資料耐久性、節點信任或併行寫入。要拿到一個檔案，至少需回答「誰知道它在哪」「如何到達」「內容是否正確」「提供者失聯後是否還有副本」。
+假設同學都要下載同一份課程映像檔。若每人都找同一台伺服器，來源得送出每一份檔案。若先下載的同學也能上傳，一部分傳輸工作便移交給參與者。這是對等運算（Peer-to-Peer Computing，P2P）的出發點。講義 P93 的 SETI@home 把類似的資源分工用在邊緣運算，工作分配仍可保有中央角色。接下來的問題是，A 知道檔案的名稱或識別鍵，卻不知道誰有檔案，第一個封包要送給誰？
 
-**覆疊網路（Overlay Network）** 由 end hosts 在既有 IP 網路上建立邏輯連線。一個 overlay hop 可能經過多個實體 routers；邏輯上相鄰不表示地理或網路延遲接近。
+覆疊網路（Overlay Network）把應用程式知道並可聯絡的對等節點（Peer）連成邏輯拓樸。A 先依應用程式的查詢規則找鄰居 B，B 根據自己的路由資訊決定再找 C。一旦得知 C 的位址，A 就可以另開 A→C 連線下載檔案。查詢走 A→B→C，檔案可以直接走 C→A，因為兩者有不同任務。
 
 ```mermaid
 flowchart LR
-    A[Peer A] -->|Overlay hop 1| B[Peer B]
-    B -->|Overlay hop 2| C[Peer C]
+    A[Peer A] -->|查詢檔案 K| B[Peer B]
+    B -->|轉送查詢 K| C[Peer C 持有 K]
     A -.-> R1[Router 1]
     R1 -.-> R2[Router 2]
     R2 -.-> B
 ```
 
-自製圖的虛線只展開第一條邏輯邊的底層路徑。P94 用每跳 50 ms、五跳 250 ms 示意延遲；只有假設五個依序依賴的 hops 各需 50 ms、沒有重疊與其他成本時才可相加。不能由「直連要 50 ms」推出任意五跳 overlay 一定至少 250 ms。
+圖 4.1｜查詢的兩個邏輯跳與第一跳的 IP 路徑。虛線逐段展開 A→B，應用程式只在 B 決定下一個 Peer。自繪，參考成大講義 P94、P97。
 
-P93 的 SETI@home 是利用邊緣運算資源的歷史動機，不表示工作分配系統已完全沒有中央角色。該頁的志願電腦數量與資料量保留為教材歷史敘述，不當成當前服務規模。
+IP 路由（IP Routing）拿到的是目的 IP，依轉送表把封包交給下一台路由器。Overlay 做的是資源發現（Resource Discovery）與應用層路由（Application-Layer Routing），選擇查詢或資料接下來交給哪個 Peer。A→B 是一個邏輯跳（Logical Hop），底層可跨多個路由器跳（Router Hop）。即使底層改道，只要端點仍可連通，應用程式仍可保留 A→B 這條邏輯邊。這些邊是 Peer 實際維護的聯絡關係，節點加入或離開時得更新。
 
-### 1.1 課堂問答：Overlay Hop 的延遲到底從哪裡來？
+以圖 4.1 的單向查詢為例，假設 A→B 的底層延遲為 12 ms，B 收到後花 3 ms 解析並選擇 C，B→C 又耗 18 ms，查詢約在 33 ms 到 C。這裡的 12 與 18 ms 已包含底層傳輸、傳播和排隊的合計，毋須再加一次 IP 延遲。數字未含回覆、連線建立或檔案下載。講義 P94 的 50 ms × 5 = 250 ms 同樣是在逐段、串行且每段等長的假設下加總。單知道 A 直達 C 耗 50 ms，無法推知 A→B 與 B→C 各需多少。
 
-**Q：一個 Logical Hop 的傳輸時間，不就是底層 Physical Network 的路由時間嗎？**
-
-**A：是。** 一個 overlay hop 指應用層從某個 Peer 傳到下一個 Peer；底層仍由 TCP／UDP、IP Routing 與可能經過的多台 routers 承載。它不是獨立存在的第二條實體網路，也不是另外再疊加一次完整的 IP 傳輸時間。
-
-- 一個 logical hop 的耗時大致可拆成：**底層 IP 路徑的傳輸／傳播／排隊等延遲 + Peer 的應用層處理與轉送開銷**。
-- **一個 logical hop 不等於一個 router hop**；例如 Overlay 中 A→B 只有一跳，但底層可能是 A→R1→R2→R3→B。
-- 多跳 Overlay A→B→C→D 的封包可能分段經過多條 IP 路徑，且 B、C 須接收後再轉送。總耗時需逐段估算，不能只看 Overlay 圖的線條數。
-
-**講義 P94 的 50 ms × 5 = 250 ms 是教學假設**：只有在每個 logical hop 都約需 50 ms、各段依序執行時，才能如此加總。若已知「A 直達 D 的 IP 路徑為 50 ms」，並不能直接推出 A→B→C→D 等 Overlay 路徑每一跳都要 50 ms；實際延遲依各 Peer 間的底層路徑而異。
-
-### 1.2 課堂問答：Overlay Network 只是為了簡化拓樸圖嗎？
-
-**Q：Overlay Network 的具體目的，是否只是把複雜的實體拓樸畫得比較簡單？**
-
-**A：不是。圖形簡化只是呈現方式；真正目的在於讓應用程式在既有 Internet 上，自行定義邏輯鄰居、資料定位與訊息轉送規則。**
-
-**分層職責：**
-
-| 層次 | 回答的問題 | 主要機制 |
-| --- | --- | --- |
-| **IP／Physical Network** | 「已知目的 IP，封包怎麼送到那台主機？」 | IP addressing、routers、routing tables |
-| **P2P Overlay Network** | 「需要的資料／服務在哪個 Peer？接下來應詢問誰？」 | 邏輯拓樸、neighbor／routing state、lookup 與 membership |
-
-**具體例子：** Peer A 想取得某個 key 對應的檔案，但不知道由誰保存。Overlay 可以按照搜尋或 DHT 規則，將查詢從 A 經 B 轉送到負責該 key 的 C。底層每一段仍使用一般 IP Routing；找到 C 之後，實際檔案傳輸也**可能直接建立 A↔C 連線**，不必一定沿查詢路徑反向傳整份資料。若一開始就知道 C 的 IP／位置，應用程式也可以直接連接，不需要為此繞過 B。
-
-Overlay 因此可以支援 **Resource Discovery（資源發現）**、**Application-Level Routing（應用層路由）**、**Dynamic Membership（節點加入／離開管理）**，以及依架構而異的去中心化資源協作；但增加邏輯轉送與維護成本，也**不保證最短路徑或最低延遲**。不同 P2P 設計可能仍含 bootstrap 或中央索引，不可把「有 Overlay」等同於「完全沒有中央服務」。
-
-**結論：Overlay 不是用來取代 IP Routing，而是補上 IP 本身不知道「哪個 Peer 負責哪份資料」的應用層定位與組織機制。**
+同一套「由端主機選擇下一站」的能力也能用來分送資料。接下來先讓 A、B 替來源轉送串流，再比較兩套檔案查詢如何決定鄰居或目錄。
 
 ## 2. 從 Multicast、Napster 到 Gnutella
 
@@ -62,43 +35,63 @@ Overlay 因此可以支援 **Resource Discovery（資源發現）**、**Applicat
 
 假設 S 把一份影片資料送 A、B，A 再送 C、D。S 只維持兩份上行流量，但 A 必須負擔轉送與上傳能力。A crash 時 C、D 失去上游，需要重新接入；不能只畫一棵樹就宣稱具有故障恢復。
 
+```mermaid
+flowchart TD
+    S[來源 S] -->|一份串流| A[Peer A]
+    S -->|一份串流| B[Peer B]
+    A -->|轉送相同資料| C[Peer C]
+    A -->|轉送相同資料| D[Peer D]
+```
+
+圖 4.2｜來源送兩份，A 負責複製下一層的兩份。每條邊各自透過 IP 路徑傳輸。自繪，參考成大講義 P95。
+
 Overlay 可不改 routers 便部署，代價是多次經過相同實體鏈路、來源到接收者路徑變長，以及 peer 上傳頻寬的限制。將所有人直接連回 S 可減少轉送延遲，卻把流量集中在來源。
 
-### 2.2 集中式目錄與無結構搜尋
+### 2.2 從查詢目錄到鄰居搜尋
 
-| 方法 | 控制／搜尋路徑 | 資料路徑 | 故障與規模限制 |
-| --- | --- | --- | --- |
-| Napster 式中央目錄 | 向 catalog 搜檔案與提供者 | Peer 間直接傳檔 | 目錄失效會影響發現；不是每個檔案 byte 都流經中央 |
-| Gnutella 式 Flooding | 向鄰居轉送 query，逐層擴散 | 找到後另建傳輸路徑 | 訊息重複與廣播風暴；TTL 截止可能找不到仍存在的資料 |
-| Gossip | 隨機找少量 peers 傳播或比對狀態 | 多輪逐步散布 | 機率性收斂，需重試與可達性，不直接提供精確查找 |
-| Structured DHT | 按 key space 與 routing state 尋找責任節點 | 由儲存層決定 | 拓樸維護與 churn 成本；通常以 exact key 查找 |
+在 Napster 的設計中，C 先向中央目錄（Centralized Catalog）登記檔名與可連線位址。A 請目錄查檔名，收到 C 的位址後向 C 下載。即使目錄暫時失效，已建立的傳輸仍可繼續，但新的搜尋可能無法找到 C。這套設計把「誰有檔案」集中管理，把檔案流量留在 Peers。
+
+去掉目錄後，Gnutella 的節點只知道自己的鄰居，收到新查詢便向周圍擴散。這稱為泛洪（Flooding）。每跨一條邏輯邊就消耗一個存活跳數（Time to Live，TTL），剩餘跳數耗盡時停止轉送。
 
 Flooding 可用 message ID 去重與 TTL 限制範圍。例如六節點 A–B、A–C、B–D、C–D、D–E、C–F，A 發 Query q1。若 D 不辨認 q1，會把從 B、C 收到的同一查詢重複轉送；辨認 q1 可減少重複處理，但仍不能避免每次新 Query 消耗多條邊。
 
 TTL=1 只看到 B、C，E 有檔案也可能找不到。這是有限搜尋範圍的 false negative，不表示檔案已不存在。DHT 則通常將 key hash 後定位，不直接回答「檔名包含某個字」；全文搜尋須另建索引。
 
+兩種搜尋都在問「哪裡已有檔案」。當任務變成「讓本來沒有更新的人都拿到更新」，對每一次更新泛洪會反覆經過同一批邊。下一節改成每輪只抽少量聯絡對象，再觀察更新如何擴散。
+
 ## 3. Gossip、Anti-entropy 與收斂條件
 
 > [課程講義] P98–P103。延伸：[Demers 等，Epidemic Algorithms for Replicated Database Maintenance](https://www.cs.cornell.edu/courses/cs614/2004sp/papers/p1-demers.pdf)，§1–§2。
 
-**流行病式傳播（Epidemic Dissemination）** 借用更新散布的感染比喻：已知某更新的節點為 infective，尚未知的為 susceptible。**反熵（Anti-entropy）** 定期選 partner，交換資料或摘要、修補差異；**謠言傳播（Rumor Mongering）** 主要轉送近期更新，重複碰到已知者後可能停止。
+新版映像檔發布後，A 可以先通知 B。下一輪 A 聯絡 C，已取得更新的 B 同時聯絡 D。新增的持有者也能分擔下一輪的傳播工作。這種流行病式傳播（Epidemic Dissemination）把已知更新者稱為 infective，還缺更新者稱為 susceptible。對等節點隨機聯絡少量同伴的方式稱為 Gossip。
 
-兩者不相同：持續反熵可補救之前漏掉的更新；提早停止傳播的 rumor 可能留下永久缺口。P98 的「所有活節點終將收到」需建立在可達路徑、持續公平抽樣與重試、更新仍被保留等條件上；永久分區兩側無法互傳，隨機演算法也沒有每次執行固定完成的期限。
+反熵（Anti-entropy）讓節點定期比對版本或摘要，再補送差異，因此上次漏掉的更新還有機會修補。謠言傳播（Rumor Mongering）主動轉送近期更新，碰到多個已知者後可能停止。以下先用持續交換的一次正常執行看兩種發起方向，最後再檢查何時無法收斂。
 
 ### 3.1 Push、Pull 與 Push-pull
 
-| 方式 | 主動方與交換 | 初期／末期的成本 | 不保證什麼 |
-| --- | --- | --- | --- |
-| Push | 已知更新者主動送給 partner | 初期少量感染者即可發起；末期容易撞到已知者 | 一次送出就送達所有節點 |
-| Pull | 缺資料者向 partner 要更新 | 末期少數缺資料者可快速補洞；初期許多查詢落空 | 所有系統都能免費知道自己缺哪一版 |
-| Push-pull | 雙方比對並交換差異 | 可同時補兩方向，但每次需額外摘要與協定成本 | 不需版本判斷與衝突處理 |
-| Direct Mail | 發起端直接通知全部已知節點 | 一次 O(N) 發送，集中來源頻寬 | 成員名單完整、丟包會自動補回 |
+由 A 主動把已知更新交給 B 稱為推送（Push）。由 B 主動向某個同伴詢問自己缺的資料稱為拉取（Pull）。一次聯絡也可以雙方都比對摘要，交換各自缺的項目，稱為推拉交換（Push-pull）。若 A 一開始就有全部成員的地址，也能直接寄送（Direct Mail），此時約有 O(N) 次發送集中在 A。
 
 實際反熵常先交換版本摘要，必要時才送內容；不能把下面「每個缺資料者每輪發一個 request」模型當作所有產品的精確封包數。
 
-### 3.2 固定一個 round 的模型
+```mermaid
+sequenceDiagram
+    participant A
+    participant B
+    participant C
+    Note over A,C: 初始只有 A 持有更新 u
+    Note over A,C: 第 1 輪，A 主動發起 Push
+    A->>B: 傳送更新 u
+    Note over A,C: 第 2 輪，C 主動發起 Pull
+    C->>B: 比對摘要，詢問缺少的版本
+    B-->>C: 回傳 u
+    Note over A,C: A、B、C 都取得 u
+```
 
-為解讀 P99–P101，先固定假設：
+圖 4.3｜同一筆更新可以由持有者先推一輪，再由缺資料的節點拉取。B 在第 1 輪取得更新，第 2 輪便能回答。自繪，參考成大講義 P99、P102–P103。
+
+### 3.2 每輪有多少人仍缺更新？
+
+剛才的圖能說明一次傳播。要比較兩種策略，現在把節點數固定，數「還在等待的人」，因為這個數字能直接指出何時適合換成 Pull。為解讀 P99–P101，固定以下條件：
 
 - N 個節點、單一更新，某輪開始有 S_i 個 susceptible、I_i=N−S_i 個 infective，`p_i=S_i/N`。
 - partner 從全部 N 個節點均勻獨立抽樣，允許抽到自己；一輪內使用輪初狀態，收到資料者下一輪才主動傳播。
@@ -160,6 +153,8 @@ P103 的假設情境是 N=10,000、只有一台知道更新：
 
 這是一次可能執行，不是所有抽樣都在三輪完成。若每次都抽到 A，有限輪數內可以始終未完成；若 F 永久隔離，則無法靠重試跨越不存在的通路。
 
+P98 的「所有活節點終將收到」，要有可達通路、持續公平抽樣及重試，還要確保更新仍能取得。若節點提前停止轉送，也可能留下缺口。即使條件具備，單次隨機執行仍沒有固定完成期限。
+
 ### 3.5 刪除、衝突與 Anti-entropy 的工程邊界
 
 只有「較大版本覆蓋較小版本」的規則，仍需定義版本比較與刪除表示。A 刪除 k、B 離線保有 k；若 A 只把資料完全移除，B 恢復時可能把舊值傳回，造成復活。**刪除標記（Tombstone）** 保留「已刪除及其版本」，使反熵能傳播刪除；何時清除 tombstone 要有足夠的傳播、成員與保留期條件。
@@ -170,7 +165,9 @@ P103 的假設情境是 N=10,000、只有一台知道更新：
 
 > [課程講義] P104–P105；延伸：[Chord 原論文](https://pdos.csail.mit.edu/papers/chord%3Asigcomm01/chord_sigcomm.pdf)，§4。
 
-**分散式雜湊表（Distributed Hash Table，DHT）** 將 key 映到邏輯識別空間，再依拓樸把查詢送到責任節點。應用可看到 `put(key,value)`、`get(key)`，底層卻包含定位、節點維護、傳輸與儲存。
+反熵回答「誰還缺更新」，但 A 下次要找一個指定的 block，仍需要能從 key 直接推進的查找規則。分散式雜湊表（Distributed Hash Table，DHT）先把識別鍵（Key）映到共同的邏輯空間，再按區域或區間指派責任節點（Owner）。本來任意相連的 Peer 現在維護特定鄰居，因此中途的 B 即使沒存這個 block，也能指向更接近目標的位置。
+
+應用對同一個 key 做 `put(key,value)` 和 `get(key)`，兩次運算會映到同一位置。穩定拓樸中，查詢可走向同一個責任節點。CAN 先展示如何用二維區域完成這件事，Chord 接著把相同問題放到一維環上。
 
 「唯一責任節點」是穩定拓樸中的邏輯 owner，不代表只有一份副本，也不保證節點異動期間所有人立即同意 owner。雜湊能分散 key，不能自動消除 hot key 的讀取負載，或防止惡意者選擇特殊 IDs。
 
@@ -182,7 +179,7 @@ API 分層必須清楚：Chord 本身主要提供 `lookup(key)` 找節點；bloc
 
 **內容定址網路（Content-Addressable Network，CAN）** 把邏輯 d 維空間分成 zones，每個 peer 負責其中一塊。原始模型為 d-torus，邊界環繞；這是虛擬座標，不是地理位置。Neighbor zones 在一維接壤、其餘維度範圍重疊，光碰到角落不一定算鄰居。
 
-### 5.1 二維加入與發布的完整例子
+### 5.1 用區域切分交接檔案鍵
 
 [教學補充／推導] 用 `[0,1)×[0,1)`，半開區間避免邊界同時屬於兩人。初始四份區域：
 
@@ -192,6 +189,20 @@ API 分層必須清楚：Chord 本身主要提供 `lookup(key)` 找節點；bloc
 | B | `[0.5,1)` | `[0,0.5)` |
 | C | `[0,0.5)` | `[0.5,1)` |
 | D | `[0.5,1)` | `[0.5,1)` |
+
+在 J 加入以前，`hash(K)=(0.8,0.6)` 屬於 D。現在讓 J 加入右上角。觀察同一個 key 為何要換 owner，以及既有資料什麼時候才跟上：
+
+```text
+y                       x = 0       0.5     0.75      1
+1.0                         +---------+--------+-------+
+                            |    C    |   D    |   J   |
+0.6                         |         |        | * K   |
+0.5                         +---------+--------+-------+
+                            |    A    |        B       |
+0.0                         +---------+----------------+
+```
+
+圖 4.4a｜分裂後的 CAN 座標。上半部在 x=0.75 新增邊界，K 的 x=0.8 落在 J 一側。線段只示區域邊界，通訊可經環繞的鄰居。自繪，參考成大講義 P106。
 
 1. 新節點 J 先聯絡 bootstrap peer，選定加入點 `(0.8,0.7)`。
 2. 請求經 CAN 路由到該點的 owner D；bootstrap 只是入口，不應成為所有資料的唯一轉送中心。
@@ -213,7 +224,7 @@ sequenceDiagram
     J->>N: 宣告新 zone 與 endpoint
 ```
 
-圖只表示交接責任，不宣稱資料遷移與所有通知具有單一原子交易。真實加入／故障協定需處理通知重送、部分交接與版本；P106 沒有提供足以直接部署的完整狀態機。
+圖 4.4｜D 切分區域後交接資料並更新鄰居。訊息各自到達，實作要處理重送、部分交接與版本。自繪，參考成大講義 P106。
 
 ### 5.2 路由、故障與成本
 
@@ -244,9 +255,17 @@ P107 的 m=6，節點 `{0,10,20,32,45,55}`，空間為 `0..63`。責任區間如
 
 key=32 由 N32 負責；key=42 由 N45 負責，不能因 42 距離 32 較近就選 N32。
 
-### 6.2 Finger 的完整核算
+```text
+順時針：N0 → N10 → N20 → N32 → (key 42) → N45 → N55
+        ↑                                          │
+        └──────────────────── 63→0 ───────────────┘
+```
 
-**捷徑表（Finger Table）** 第 i 項（本章 i=0..m−1）為 `successor((nodeID + 2^i) mod 2^m)`。它是「offset 對應的第一個現存節點」，不是直接把 offset 當下一台 ID。
+圖 4.5a｜把環攤開可直接看到 42 後面的第一個節點是 N45。括號標識 key 的位置，N 開頭的標識是節點。自繪，參考成大講義 P107。
+
+### 6.2 用捷徑跳過中間節點
+
+如果 N0 只認得下一個節點，找 42 得一路經過 N10、N20、N32 才能判斷 N45 是 owner。Chord 讓 N0 多記一些遠近不同的聯絡人。捷徑表（Finger Table）第 i 項（本章 i=0..m−1）為 `successor((nodeID + 2^i) mod 2^m)`。先沿環算出起點（Finger Start），再找起點的後繼。N32 的 offset 8 先得到 40，環上第一個不小於 40 的節點是 N45，故該欄存 N45。
 
 | offset | N0 的 start → finger | N32 的 start → finger |
 | --- | --- | --- |
@@ -284,7 +303,9 @@ flowchart TD
     N45 -->|儲存層回傳資料| R[Client]
 ```
 
-P107 的「Jump 8」可用來理解 finger start=40 的方向，但 start 40 的 finger 是 N45；42 本身不是 peer。當最後一跳跨過 key 到 successor，是在辨識 owner，不能把不斷 overshoot 當成 closest-preceding 規則。
+圖 4.5｜N0 用捷徑把查詢交給 N32，N32 用後繼區間找到 N45。資料回傳由儲存層處理。自繪，參考成大講義 P107。
+
+P107 的「Jump 8」可用來理解 finger start=40 的方向，但 start 40 的 finger 是 N45。當最後一跳跨過 key 到 successor，是在辨識 owner，前面的選擇仍遵照 closest-preceding 規則。
 
 環繞案例：從 N45 找 60，可到 N55，再發現 60∈`(55,0]`，owner=N0。普通整數比較會錯誤拒絕跨 63→0 的有效區間，故 pseudocode 必須使用 modulo interval。
 
@@ -324,7 +345,7 @@ sequenceDiagram
     Note over B: predecessor=N10
 ```
 
-這裡不需要用分散式鎖阻塞整張網路；它展示局部修補的機制，不證明原始簡化協定在任意起始狀態、任意 churn 下都會收斂。
+圖 4.6｜先由 N20 發現新前驅，再由 N10 改接新後繼。圖只追蹤單一加入，沒有其他故障或同時加入。自繪，參考成大講義 P109。
 
 ### 7.2 Successor 故障與 Successor List
 
@@ -342,7 +363,7 @@ P109 的三階段圖說明單一加入可經週期通知接上，不是任意環
 
 > [課程講義] P110–P111。延伸：[Dabek 等，Wide-area cooperative storage with CFS](https://pdos.csail.mit.edu/papers/cfs%3Asosp01/cfs_sosp.pdf)，§3–§5。
 
-**合作式檔案系統（Cooperative File System，CFS）** 讓一般 Client 讀取發布者提供的檔案。資料分成 blocks，每塊可由內容雜湊識別；上層檔案結構將 block IDs 串成目錄、inode 與資料內容。
+現在可以回到開頭的課程映像檔。應用想開啟一個路徑，Chord 卻只認得 key。合作式檔案系統（Cooperative File System，CFS）先把路徑拆成目錄與索引節點（Inode）等中繼資料的查找，再由分散式區塊儲存層（DHash）用內容雜湊逐塊取得映像檔。每塊落在哪些節點，才交由 Chord 提供的定位能力決定。
 
 ```mermaid
 flowchart TD
@@ -352,7 +373,7 @@ flowchart TD
     C --> N[遠端 DHash 儲存節點]
 ```
 
-這是責任分層，不是每次讀取一定按三層各發一個獨立 RPC。查找過程可能利用 cache、選擇副本與整合操作。
+圖 4.7｜檔案操作落到區塊資料，DHash 使用 Chord 找儲存節點。這是責任分層，實作可以快取或合併通訊。自繪，參考成大講義 P110–P111。
 
 ### 8.1 發布與讀取的完整資料路徑
 
@@ -364,13 +385,7 @@ flowchart TD
 4. Reader 從已知發布者公鑰找到 root，驗簽，再循 metadata 中的 hashes 取回 B1–B3，逐塊驗 hash 後組回 F。
 5. 某提供者回傳錯誤 bytes 時 hash 檢查失敗，可改找其他副本；若所有副本都失聯，驗證能力不能代替可用性。
 
-| 需求 | 提供它的機制 | 不提供的保證 |
-| --- | --- | --- |
-| 找到責任 peer | Chord lookup | 不保證 value 已持久保存 |
-| 維持 block 可用 | DHash 複寫、保留期與修補 | 不保證所有副本永久在線 |
-| 熱門資料加速 | 路徑快取、副本選擇 | 不代表增加了獨立永久副本 |
-| 驗證 block 未變 | Content hash | 不證明發布者可信、也不證明這是最新 root |
-| 驗證 root 發布身份 | 公鑰簽章 | 私鑰失竊或根版本選擇仍需處理 |
+查到位址後能否讀取，取決於 DHash 是否還有可聯絡的副本。快取可以加速熱門區塊，持久保留則要檢查副本策略與續存期限。讀到資料之後，hash 與簽章分別檢查內容和根的發布者，讀者仍需判斷手上的有效 root 是否夠新。若多人要更新同一個 root，還得先約定版本由誰決定。
 
 ### 8.2 「Read-only」與 Publisher 更新
 
@@ -437,7 +452,7 @@ IPFS 的 **內容識別碼（Content Identifier，CID）** 包含 hash 與編碼
 | 狀態維護 | 分裂、鄰居通知、zone 修補 | Join、stabilize、fix_fingers、故障接替 | 抽樣、版本摘要、重試與 tombstone |
 | 不自動提供 | 任意資料的持久性與一致寫入 | 儲存複寫、完整群體共識、Byzantine 安全 | 精確查找、全序與有限時間必達 |
 
-速查：**Overlay hop 不等於 IP hop；Gossip 的輪數與訊息成本分開；CAN 找 zone，Chord 找 successor；finger 是 start 的 successor；路由修補不等於資料回復；CFS 一般 Client 唯讀；多數決不解決 Sybil。**
+回到 A 的下載請求，選好路由能縮短「去哪裡問」的成本，卻還得讓副本提供同一份可解釋的結果。當 A 和 B 發出的讀取先後看到不同的版本，僅知道路由如何找到伺服器已無法判斷結果是否符合承諾。講義 P117 由此接到資料一致性模型。
 
 ## 13. 英文選擇題與逐項解析
 
@@ -476,18 +491,7 @@ For fixed N and S susceptible nodes at a round's start, which expression gives t
 
 **答案：A。** A：S/N 乘上逃過全部 N−S 次 Push 的機率。B：不符合機率範圍與抽樣。C：一次成功不代表其餘人也收到。D：不是未感染比例。
 
-### Q4 — Chord responsibility
-
-In the 6-bit ring `{0,10,20,32,45,55}`, which node owns key 42?
-
-- A. N32, because it is numerically closest.
-- B. A new node N42 must be created.
-- C. N45, the first existing node clockwise from 42.
-- D. N0, because every lookup begins at zero.
-
-**答案：C。** A：責任依 successor，不依最近距離。B：Key 不等於節點。C：42∈(32,45]。D：查找起點不決定 owner。
-
-### Q5 — Finger entry
+### Q4 — Finger entry
 
 For node N32 in that ring, what is the finger at offset 8?
 
@@ -498,18 +502,7 @@ For node N32 in that ring, what is the finger at offset 8?
 
 **答案：D。** A：忘記加本地 ID。B：start 與現存 peer 不同。C：45 比 55 更先接續 40。D：套用 finger 定義。
 
-### Q6 — Stabilization
-
-N15 joins between N10 and N20. N20 now reports predecessor=N15 when N10 stabilizes. Under the single-join assumptions, what should N10 do?
-
-- A. Change its successor to N15 and notify N15.
-- B. Run a global Paxos instance for every finger lookup.
-- C. Delete all data on N20 immediately.
-- D. Infer that arbitrary future churn is now formally solved.
-
-**答案：A。** A：驗證區間後的局部修補。B：不是此維護流程。C：資料遷移另有責任與完成條件。D：單例不能證明一般正確性，另有後續研究修正。
-
-### Q7 — CFS layers
+### Q5 — CFS layers
 
 Which assignment of responsibilities matches the original CFS architecture?
 
@@ -520,42 +513,21 @@ Which assignment of responsibilities matches the original CFS architecture?
 
 **答案：B。** A：Chord 是 lookup 層。B：分工正確。C：P112 是可變資料的設計延伸，不是原始唯讀 CFS 每次讀取路徑。D：完整性不等於可用性與保留期。
 
-### Q8 — Replica-group changes
-
-Why is recomputing a key's current successors insufficient to reconfigure a consensus group safely?
-
-- A. Hash functions cannot be computed more than once.
-- B. New nodes are automatically Byzantine.
-- C. Old and new groups may not preserve the required quorum history and configuration relationship.
-- D. Log indices become physical timestamps.
-
-**答案：C。** A：與重算次數無關。B：加入不代表惡意。C：需處理配置與狀態轉移。D：兩種概念無此轉換。
-
-### Q9 — Sybil and integrity
-
-An attacker controls many node IDs and surrounds a victim's neighbor view. What can content hashes alone fail to prevent?
-
-- A. Detecting returned bytes that do not match their content hash.
-- B. Recomputing a hash locally.
-- C. Comparing expected and received digests.
-- D. Withholding valid data or isolating the victim from honest peers.
-
-**答案：D。** A：這正是 hash 可支援的檢查。B、C：都是可本地執行的驗證。D：完整性檢查不能強迫對方回覆或保證路由視野。
-
 ## 14. 來源與投影片對照
 
-| 講義頁碼 | 本章定位 |
-| --- | --- |
-| P90–P94 | 定位、P2P 動機、Overlay 與 latency 假設 |
-| P95–P97 | End System Multicast、Napster、Gnutella |
-| P98–P103 | Gossip、Push／Pull、機率推導與通信成本 |
-| P104–P106 | DHT、API 與 CAN |
-| P107–P109 | Chord finger、lookup、join 與 maintenance |
-| P110–P112 | CFS／DHash／Chord 分層、唯讀語義與可變資料共識延伸 |
-| P113–P114 | Churn、成本、Sybil／Eclipse 與信任假設 |
-| P115–P117 | Web3 示意、資料／信任分層、銜接 P118 的 Consistency |
+| 講義 | 主題與原理 | 圖解與推演 | 下一個問題 |
+| --- | --- | --- | --- |
+| P90–P94 | Peer 分攤資源，Overlay 選應用層下一站 | 圖 4.1，A→B→C 的 33 ms | 能否分攤來源流量？ |
+| P95–P97 | 端點多播、中央目錄與泛洪 | 圖 4.2，S 的上行與 TTL=1 | 何時可以只聯絡少量節點？ |
+| P98–P103 | 隨機抽樣與反熵 | 圖 4.3，六節點、單輪期望與 N=10,000 成本 | 如何精確找一個 key？ |
+| P104–P106 | 結構化查找與 CAN 區域 | 圖 4.4，J 接手 K | 如何在環上縮短路徑？ |
+| P107–P109 | Chord 後繼、捷徑、局部維護 | 圖 4.5–4.6，key42、N15 | 拿到位址後如何讀檔？ |
+| P110–P112 | 區塊儲存與可變資料的共識 | 圖 4.7，三個區塊與 q=2 群體 | 如何看待提供者與副本的獨立性？ |
+| P113–P117 | 路由、完整性、可用性及信任 | Sybil 控制域與 CID 例 | P118，副本能承諾哪些讀寫結果？ |
 
 延伸資料（查閱日期 2026-11-20）：
+
+- [原文書] van Steen、Tanenbaum，第 4 版，PDF P106–P109（結構化與非結構化覆疊）、P248–P250（應用層多播）、P256–P257（Gossip）、P349–P352（DHT）。
 
 - [原始論文] Demers 等，1987，[Epidemic Algorithms for Replicated Database Maintenance](https://www.cs.cornell.edu/courses/cs614/2004sp/papers/p1-demers.pdf)，§1–§2：反熵、rumor、傳播成本與刪除。
 - [原始論文] Ratnasamy 等，2001，[A Scalable Content-Addressable Network](https://www.gsd.inesc-id.pt/~ler/docencia/srsdI/p13-ratnasamy.pdf)，§2：torus、routing、join 與維護；研究機構保存的發表論文。
