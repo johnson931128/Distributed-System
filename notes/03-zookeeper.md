@@ -1,25 +1,14 @@
 # Chapter 03 — 分散式協調服務（Distributed Coordination Services: ZooKeeper）
 
-## 1. 為什麼資料平台需要協調服務？
+## 1. Worker 要去哪裡找設定和排程者？
 
 > [課程講義] P63–P70：章節定位、Hadoop 生態系與 ZooKeeper 的位置。
 
-分散式運算的主要資料流可以很大，控制它的資訊卻通常很小：目前誰是工作排程者、有哪些 Worker、設定版本是多少、誰可以更新某個共享資源。這些資訊若各節點自行猜測，可能出現兩個排程者、重複執行工作或使用不相容的設定。
+兩台工作節點（Worker）重啟後要繼續處理同一批檔案。它們可以從檔案系統找回輸入，但還得知道排程者是誰、每台能同時跑幾個工作，以及誰有權發布結果。如果各自把這些資訊留在記憶體，一台重啟就可能回到舊版設定，兩個排程者也可能同時將工作交給不同人。
 
-**協調服務（Coordination Service）** 提供共享的命名、狀態與順序，讓應用用一小組操作組合出設定管理、成員註冊、選舉與互斥。ZooKeeper 的工作是保存這些協調用中繼資料（Metadata），不是代替 HDFS 存放大量檔案，也不是代替 Spark 執行計算。
+ZooKeeper 把這些應用共同依賴的小型中繼資料（Metadata）放在協調服務（Coordination Service），讓應用用共享狀態、名稱及通知來組合設定管理、成員註冊與互斥。這接續 [Chapter 02](02-fault-tolerance-paxos-raft.md) 的問題：如果多台機器先同意更新順序，應用可以把哪些責任交給這個共同狀態？
 
-### 1.1 依講義理解 Hadoop 生態系
-
-| 元件 | P66–P70 的角色 | 與協調服務的關係 |
-| --- | --- | --- |
-| HDFS | 檔案切成 blocks 並複寫 | 大型資料的儲存層，與協調用 metadata 分工 |
-| YARN | 配置 CPU、memory 等叢集資源 | 管理運算資源；「叢集 OS」是教材類比，非取代各主機 OS |
-| MapReduce／Spark | 批次與一般分散式運算 | 執行資料處理；本章不展開排程與回復細節 |
-| HBase | 建於 HDFS 上的 wide-column store | 資料庫層，可使用協調機制管理服務狀態 |
-| Hive／Phoenix | 面向不同儲存與運算引擎的 SQL 介面 | 不是每次查詢都經過 ZooKeeper 儲存資料 |
-| ZooKeeper | 設定、命名、同步與成員資訊 | 提供小型共享狀態與通知，供其他服務建立協調邏輯 |
-
-P66 以 GFS、MapReduce 論文與 Hadoop 的誕生交代歷史背景；本章不把這段背景擴張成後續 Storage 章節。P67 的堆疊圖是概念定位，不應讀成「每個 MapReduce 輸出都必須寫進 HBase」。
+講義從 GFS、MapReduce 論文帶到 Hadoop。沿著同一批資料看，HDFS 儲存並複寫資料區塊，YARN 分配執行資源，MapReduce 或 Spark 負責運算。HBase 將資料組織成寬欄資料庫（Wide-Column Store），Hive 和 Phoenix 分別透過 SQL 介面使用相關運算／儲存元件。圖 3.1 用兩條路徑標出 ZooKeeper 的位置。P67 描述的是元件定位，各部署的依賴和資料路徑取決於所用元件。
 
 ```mermaid
 flowchart LR
@@ -29,7 +18,7 @@ flowchart LR
     A -->|工作與資料請求| W
 ```
 
-自製圖將主要資料與協調資訊分開；箭頭不代表任意 Hadoop 版本都必須依賴 ZooKeeper。P69 的「Spark 最多快 100 倍」、P70 的「缺少它整個生態系便失序」是教材的概括敘述，不是所有工作負載或部署的保證。
+圖 3.1｜Worker 往儲存層搬移工作資料，向 ZooKeeper 取得設定與註冊。自繪，參考成大講義 P67、P70 與 MIT 6.5840 Lecture 9。
 
 ## 2. Ensemble 架構、讀寫路徑與 Wait-free
 
@@ -37,11 +26,9 @@ flowchart LR
 
 **伺服器群體（Ensemble）** 共同維護資料樹。Client 通常連接一台伺服器，並由 client library 管理重新連線。一般讀取由連線端的本地副本處理；更新則經過 Leader 排序、複寫與提交。
 
-| 請求 | 典型路徑 | 得到的好處 | 代價與界線 |
-| --- | --- | --- | --- |
-| `getData` 等一般讀取 | Client → 連線端副本 → Client | 省去每次讀取的 quorum 往返，可分散讀流量 | 副本可能落後，不能自動視為跨 Client 的最新讀取 |
-| `setData` 等更新 | Client → 連線端 → Leader → quorum → 提交／回覆 | 更新順序與已確認結果受複寫協定保護 | 有網路、持久化與排隊成本；失去多數時停止正常寫入進展 |
-| Watch 通知 | 由連線與 Session 管理送達 Client | 狀態失效時再重新讀取，減少輪詢 | 通知不是完整事件日誌，斷線時也可能收不到 |
+Worker 連到 F1 後就能讀 `/app/config`，F1 直接用自己已套用的狀態答覆，因此省去每次讀取的多數往返。管理者若向同一台 F1 寫入，請求則得經過領導者（Leader）排序，再由足夠副本持久保存。這條路有更多網路與磁碟成本，也使 F1 和 F2 的讀取進度可能短暫不同。
+
+設定變動不頻繁時，Worker 可以在讀取時登記監看通知（Watch）。收到通知便重新讀取，平常不必一直輪詢。這把應用等待設定變動的工作留給 Client，寫入端仍可繼續處理其他請求。
 
 P71–P72 的讀寫比例、microsecond latency、P88 的讀取吞吐成長描述，應理解為設計動機。本文沒有測量 latency，也不將「資料樹在 RAM」解釋為更新無需磁碟。成功更新仍需要協定要求的持久化。
 
@@ -55,7 +42,7 @@ P71–P72 的讀寫比例、microsecond latency、P88 的讀取吞吐成長描�
 
 > [課程講義] P75–P79。延伸：[ZooKeeper 3.9.4 Internals](https://zookeeper.apache.org/doc/r3.9.4/zookeeperInternals.html)，Atomic Broadcast、Leader Activation、Quorums。
 
-### 3.1 計票對象與可用性前提
+### 3.1 寫入至少要經過哪些伺服器？
 
 普通等權重配置中，有 N 個投票伺服器，**多數法定人數（Majority Quorum）** 為 `q = ⌊N/2⌋ + 1`。Leader 自己也是投票群體的一員。非投票 Observer 不增加分母；本節不涵蓋 weighted／hierarchical quorum 或配置變更。
 
@@ -65,7 +52,7 @@ P71–P72 的讀寫比例、microsecond latency、P88 的讀取吞吐成長描�
 
 ### 3.2 Epoch、zxid 與有序前綴
 
-**ZooKeeper 原子廣播（ZooKeeper Atomic Broadcast，ZAB）** 把更新排成一致的順序。**領導世代（Epoch）** 區別不同領導權期間；**交易識別碼（ZooKeeper Transaction ID，zxid）** 表示更新順序，官方文件以 64 bits 的高 32 bits epoch 與低 32 bits counter 說明。
+如果兩次設定更新同時到達 F1 和 F2，所有副本得依同一順序套用。ZooKeeper 原子廣播（ZooKeeper Atomic Broadcast，ZAB）讓一個已啟用的 Leader 排序各筆更新，副本再依此維護共同前綴。Leader 會把領導世代（Epoch）和本世代內的計數編成交易識別碼（ZooKeeper Transaction ID，zxid），高、低各 32 bits。
 
 本章以 `(7,41)` 表示 epoch 7 的第 41 個交易計數。這個編號不是 znode 的 `version`，也不是 lock node 名稱的 sequential suffix；三者作用不同。
 
@@ -94,14 +81,9 @@ sequenceDiagram
     L->>F2: Proposal 與 Commit 可稍後追上
 ```
 
-圖省略流水線、其他 outstanding requests 與 Watch 訊息；不是完整 ZAB wire protocol。F2 較慢不必阻擋這筆更新，但不能在尚未得知提交時任意把 proposal 交給應用。
+圖 3.2｜從 F1 收到設定更新，到 L 與 F1 組成 q=2、F1 套用後回覆。自繪，參考成大講義 P77–P78。圖省略其他請求與通知。
 
-| 時點 | 已有什麼資訊 | 尚不能宣稱什麼 |
-| --- | --- | --- |
-| Leader 指派 zxid | 更新已有順序位置 | 已可靠複寫至多數 |
-| 一個 Follower ACK | 該副本已滿足保存條件 | 只看 ACK 本身，不能忘記計票基數與 Leader 狀態 |
-| 合法 quorum 完成 | Leader 可依 ZAB 規則提交此前綴 | 所有副本與 Client 都已知道 |
-| F1 套用並回覆成功 | Client 的更新已成功完成 | 外部檔案／資料庫操作也已完成 |
+把時間停在 F1 送 ACK 的位置。F1 保存了提案，L 尚須依多數規則提交，才會通知 F1 套用。F2 落後時仍可稍後補齊，這筆 Client 回覆不用等到三台全數套用。若 L 在途中消失，下一位 Leader 得先判斷這筆更新必須保留，還是可以捨棄。
 
 ### 3.4 Leader 故障：恢復先於新寫入
 
@@ -131,28 +113,13 @@ P77 的「Simplified Two-Phase Commit」是 proposal／ACK／commit 的教學類
 
 **資料節點（Znode）** 同時可有小型資料與子節點，位置以 path 命名，例如 `/app/config` 與 `/app/workers/w1`。它不是供任意大型檔案讀寫的一般檔案系統；沒有因為使用路徑就自動取得資料庫交易或 POSIX 檔案語義。
 
-| 節點／旗標 | 存活與命名規則 | 典型用途 | 限制 |
-| --- | --- | --- | --- |
-| Persistent | 顯式建立、刪除；Client Session 結束不自動刪除 | 設定、目錄、固定入口 | 需自行管理生命周期 |
-| Ephemeral | 建立者 Session 結束／到期後清理，也可顯式刪除 | 成員註冊、候選者 | 不以單次 TCP 斷線為刪除條件；一般 Ephemeral 不可有 children |
-| Sequential | 在指定前綴後附加同父節點範圍的序號 | 排隊、候選順序 | 不是全系統永久不重複的業務 ID；需考慮父節點重建與 counter 範圍 |
-| Ephemeral Sequential | 結合 Session 清理與排序 | lock queue、應用 Leader 選舉 | 外部資源權限仍需處理 stale holder |
+管理者建立持久節點（Persistent Znode）保存 `/app/config`，離線後設定仍在。Worker 則用暫存節點（Ephemeral Znode）登記 `/app/workers/w1`，它的工作階段（Session）結束時註冊會被清除。一般暫存節點不能有子節點。如果為每次鎖請求加上循序旗標（Sequential Flag），ZooKeeper 會在同一父目錄範圍的名稱後附加序號。結合兩個旗標，就有了可以排序、也能在 Session 到期後清理的請求。
 
-### 4.1 API 與它真正回報的資訊
+### 4.1 兩個人同時改一份設定
 
-| API | 機制 | 需處理的情況 |
-| --- | --- | --- |
-| `create(path,data,flags)` | 建節點；Sequential 回傳實際名稱 | ConnectionLoss 可能代表已建立但回覆未到 |
-| `delete(path,version)` | 版本符合才刪除 | NoNode、BadVersion；不可誤刪別人的新請求 |
-| `exists(path,watch)` | 查存在與 Stat，可對尚不存在的 path 設 Watch | 查詢為不存在時應重新判斷，不直接睡眠 |
-| `getData(path,watch)` | 取資料與 Stat，並可註冊資料 Watch | NoNode 不等於已成功替不存在節點建立資料 Watch |
-| `setData(path,data,version)` | 比對資料版本後更新 | BadVersion 表示需重新讀取與重新決策 |
-| `getChildren(path,watch)` | 列出 children，可對子節點集合變動設 Watch | 回傳順序不是 lock queue 已排序的保證；child 的 data 更新也不等於 child list 變動 |
-| `sync(path)` | 要求與 Leader 的更新傳播順序協調 | 非同步版本需等待 callback；保證邊界見第 9 節 |
+除了資料本身，讀取會回傳節點狀態（Stat），其中包含資料版本。這讓寫入附帶「我讀過的是哪一版」。下面先追蹤版本 4 的正常寫入與競爭結果。
 
-`version=-1` 常用來省略版本檢查，不代表「只接受最新版」。若要避免覆蓋並行更新，應傳自己讀到的 version。
-
-### 4.2 實際數值：避免 Lost Update
+### 4.2 實際數值：避免更新遺失（Lost Update）
 
 [教學補充／推導] A、B 都讀到 `/config` 的 `data={limit:10}, version=4`。
 
@@ -162,7 +129,17 @@ P77 的「Simplified Two-Phase Commit」是 proposal／ACK／commit 的教學類
 
 這相當於**比較後更新（Compare-and-Set，CAS）** 式的樂觀併行控制，不要求讀取期間持有鎖。它防止「不知資料已變就覆蓋」，卻不保證 B 的重試永遠不飢餓。若 B 改用 -1，等於明確放棄這項保護。
 
-資料 `version=5` 是該 znode 的資料修改次數，`zxid=(7,41)` 是 ensemble 更新位置，`x-0000000012` 是同父節點的排隊名稱；不能因數字接近就互相替換。
+資料 `version=5` 是該 znode 的資料修改次數，`zxid=(7,41)` 是 ensemble 更新位置，`x-0000000012` 是同父節點的排隊名稱。設定如今可以更新了，接著用 Session 辨識哪些 Worker 還保有註冊，再用 Watch 通知它們何時重讀設定。
+
+### 4.3 在實作時查 API 語義
+
+建立或刪除請求時，`create(path,data,flags)` 會回傳循序節點的實際名稱。若遇到 ConnectionLoss，可能已建立但沒收到名稱，後續用第 8 節的唯一請求前綴找回原節點。`delete(path,version)` 先核對版本，若收到 NoNode 或 BadVersion，應先重新判斷目標和權限。
+
+查找時，`exists(path,watch)` 會檢查存在與 Stat，並可對尚不存在的路徑設 Watch。`getData(path,watch)` 用來取得現有節點的資料與 Stat，回 NoNode 時沒有成功設置資料 Watch。`getChildren(path,watch)` 則監看子節點集合，父節點下某個子節點只更新自己的資料，不會因此改變清單。列出的名稱也須自行依鎖的序號排序。
+
+更新時，`setData(path,data,version)` 用版本保護並行修改，遇到 BadVersion 要重讀再決定。讀取前若需要呼叫 `sync(path)`，非同步介面應等 callback，具體保證見第 9 節。
+
+`version=-1` 常用來省略版本檢查，不代表「只接受最新版」。若要避免覆蓋並行更新，應傳自己讀到的 version。
 
 ## 5. Session、斷線與 Ephemeral 的時間軸
 
@@ -182,7 +159,7 @@ stateDiagram-v2
     Closed --> [*]
 ```
 
-圖中的 Expired 是服務端已判定的狀態；隔離中的 Client 可能到重新連線才知道到期。不能把圖解讀成「隔離端必定準時收到到期通知」。
+圖 3.3｜同一個 Session 可以跨 TCP 連線，Expired 由服務端判定。隔離中的 Client 可能在重新連線後才得知。自繪，參考成大講義 P81、P87。
 
 | 時點 | 叢集視角 | Client 能知道什麼 |
 | --- | --- | --- |
@@ -204,7 +181,7 @@ P87 寫 Ephemeral 綁定 TCP session，作為直覺可理解；實作時應修�
 
 ### 6.1 連續更新的具體例子
 
-1. Worker 以 `getData('/app/config',watch=true)` 讀到 v4。
+1. Worker 對 `/app/config` 呼叫 `getData` 並設 Watch，讀到 v4。
 2. 管理者寫成 v5，標準 Watch 觸發並被消耗。
 3. Worker 尚未重新讀取前，設定又更新至 v6。
 4. Worker 重讀取得 v6，重新設 Watch。它不一定看見 v5，也不應靠 callback 次數推斷改過幾次。
@@ -239,30 +216,7 @@ W1 用 Session S1 建立 `/app/workers/w1`，資料為 endpoint；W2 用 S2 建 
 
 **分散式鎖（Distributed Lock）** 的直接目標是讓遵循同一 recipe 的有效 Client 按協定排隊；被保護的外部資源是否能拒絕過期持有者，還需第 8.4 節的約束。
 
-### 8.1 完整 recipe 與前提
-
-假設 `/locks/job` 為持久父節點，目錄只保存同一鎖的請求；每個請求有可辨識且唯一的前綴，clients 有正確 ACL，依 sequential suffix 解析與排序。以下是語義 pseudocode，非可直接執行的 SDK：
-
-```text
-myNode := create('/locks/job/<request-id>-', EPHEMERAL_SEQUENTIAL)
-loop:
-    if Session invalid: abandon ownership and recover
-    children := getChildren('/locks/job', watch=false)
-    queue := sort valid lock requests by sequential suffix
-    if myNode not in queue: recover instead of assuming ownership
-    if myNode is queue minimum: return acquired
-    predecessor := immediate predecessor of myNode in queue
-    stat := exists(predecessor, watch=true)
-    if stat is absent: continue              # 不可直接睡眠
-    wait for relevant watch/session event
-    # callback 可能已在 wait 前到達；本地 condition/event 必須保留喚醒
-release:
-    delete myNode
-```
-
-P84 的最後「go to step 2」要同時涵蓋前驅查詢已不存在的情況。`getChildren` 與 `exists` 之間不是原子區段；`exists` 的結果與 Watch 註冊則用來封住漏通知的競爭。
-
-### 8.2 三個 Client 正常排隊
+### 8.1 三個 Client 正常排隊
 
 自製名稱簡寫為 `x-001`、`x-002`、`x-003`，非 SDK 實際補零長度：
 
@@ -290,9 +244,50 @@ sequenceDiagram
     Note over C3: 仍等待 x-002
 ```
 
+圖 3.4｜C1 刪除自己的請求，只喚醒這次直接等它的 C2。C2 還要重新檢查自己是否為隊首。自繪，參考成大講義 P84–P86。
+
 **驚群效應（Thundering Herd）** 指所有等待者監看同一節點，釋放一次便使所有人醒來重試。前驅鏈在穩定隊列中讓一次釋放只喚醒直接後繼，減少不必要通知與 RPC；不能把 P86 的「exactly one」擴張成 Session 批次清理、重連或所有併行情境都只有一個 callback。
 
+### 8.2 完整 recipe 與前提
+
+假設 `/locks/job` 為持久父節點，目錄只保存同一鎖的請求；每個請求有可辨識且唯一的前綴，clients 有正確 ACL，依 sequential suffix 解析與排序。以下是語義 pseudocode，非可直接執行的 SDK：
+
+```text
+myNode := create('/locks/job/<request-id>-', EPHEMERAL_SEQUENTIAL)
+loop:
+    if Session invalid: abandon ownership and recover
+    children := getChildren('/locks/job', watch=false)
+    queue := sort valid lock requests by sequential suffix
+    if myNode not in queue: recover instead of assuming ownership
+    if myNode is queue minimum: return acquired
+    predecessor := immediate predecessor of myNode in queue
+    stat := exists(predecessor, watch=true)
+    if stat is absent: continue              # 不可直接睡眠
+    wait for relevant watch/session event
+    # callback 可能已在 wait 前到達；本地 condition/event 必須保留喚醒
+release:
+    delete myNode
+```
+
+P84 的最後「go to step 2」要同時涵蓋前驅查詢已不存在的情況。`getChildren` 與 `exists` 之間不是原子區段；`exists` 的結果與 Watch 註冊則用來封住漏通知的競爭。
+
 ### 8.3 競爭與失敗時間軸
+
+```mermaid
+sequenceDiagram
+    participant C2
+    participant Z as ZooKeeper
+    participant C1
+    C2->>Z: getChildren
+    Z-->>C2: x-001 和 x-002
+    C1->>Z: delete x-001
+    C2->>Z: exists x-001 並設 Watch
+    Z-->>C2: 前驅已不存在
+    C2->>Z: 立刻重讀子節點
+    Z-->>C2: x-002 為隊首
+```
+
+圖 3.5｜刪除落在列舉與監看之間，C2 得到不存在就重查。若刪除發生在成功登記之後，則由通知叫醒 C2。自繪，參考成大講義 P84–P86。
 
 - **前驅在設 Watch 前消失**：C2 讀到 x-001，C1 刪除，C2 再 `exists` 得不存在；立刻回 loop，不能等永不再發生的 deletion event。
 - **前驅在設 Watch 後消失**：Watch 負責喚醒，但 callback 到達後仍回 loop。若中間等待者取消，它被喚醒也不保證已成隊首。
@@ -331,20 +326,11 @@ P88 建議先 `sync()` 再讀取，並使用「保證所有 pending updates」�
 
 若應用需要更強保證，應按服務與版本的正式讀取設計，利用已確認的 quorum 操作與順序，並檢查所需版本；不要以固定 sleep 或只看角色名稱補足證明。配置版本、CAS 與不可變快照可以縮小需要協調的範圍。
 
-## 10. 正確性、成本與常見誤解
+## 10. 從共同順序走向分散式查找
 
-| 問題 | 正確條件／成本 |
-| --- | --- |
-| 為何 queue recipe 不會讓兩個有效請求同時成最小？ | 成功建立有明確序號、依相同父目錄排序；各 Client 仍須驗證自身節點、Session 與狀態 |
-| Watch 是否決定 lock ownership？ | 否；Watch 只喚醒，重新讀取的隊列條件才決定 |
-| 排隊成本如何？ | 每個等待者通常監看一個前驅，但 `getChildren` 仍傳回隊列清單；不是整個演算法 O(1) |
-| Session 是否等於服務健康？ | 否；持續 heartbeat 的程序仍可能業務故障 |
-| Read scaling 是否無上限？ | 否；資料樹、Client、網路與管理成本存在，更新仍經共同協調路徑 |
-| FIFO 是否足以證明線性一致？ | 否；需要提交、跨 epoch 恢復與讀取語義等條件 |
-| ACL 是否可省略？ | 不能在不受信任 Client 模型中省略；若別人能刪你的 lock node，recipe 的前提就失效 |
-| 鎖能否保護任意外部副作用？ | 需外部資源驗證授權或 fencing；Session 清理無法取消所有延遲 I/O |
+ZooKeeper 讓參與者在有多數投票者可工作的情況下，共用設定、成員清單與排隊順序。前驅監看省下驚群造成的通知與重試，但每次 `getChildren` 仍會傳回清單，成本會隨隊列增長。互斥也依賴參與者遵循相同排序與存取控制。若有其他 Client 能任意刪掉仍有效的請求，隊首條件便失去依據。
 
-速查：**小型 metadata、資料樹、本地讀、Leader 排序更新、多數提交、Session 跨 TCP、Watch 後重讀、前驅消失不睡眠、外部寫入另做 fencing**。
+講義 P89 預告一致性模型。按合併講義實際頁序，中間先讀 [Chapter 04 的對等網路](04-peer-to-peer-gossip.md)，看每個 Peer 只知道局部資訊時如何找資料。兩種架構一比較，正好能辨認哪些狀態容許逐步傳播，哪些更新需要共同順序。
 
 ## 11. 英文選擇題與逐項解析
 
@@ -361,18 +347,7 @@ An ensemble has one voting leader, three voting followers, and two non-voting ob
 
 **答案：B。** A：四名投票者的半數不夠。B：`floor(4/2)+1=3`，可包含 Leader。C：不必全體。D：Observer 不計票。
 
-### Q2 — Session versus TCP
-
-A client's TCP connection fails briefly, but it reconnects before its ZooKeeper session expires. What is generally correct?
-
-- A. Every ephemeral node must have been deleted at the first lost packet.
-- B. A new session is always mandatory on every disconnect.
-- C. The valid session can survive the connection change.
-- D. A disconnect proves that the client process crashed.
-
-**答案：C。** A：刪除依 Session 生命周期。B：client library 可恢復原 Session。C：Session 與單次連線不同。D：可能只是網路問題。
-
-### Q3 — Standard Watch
+### Q2 — Standard Watch
 
 A znode changes twice before a notified client rereads it. What should the client assume?
 
@@ -383,7 +358,7 @@ A znode changes twice before a notified client rereads it. What should the clien
 
 **答案：D。** A：one-shot 不保證逐筆通知。B：通知不是資料日誌。C：需要讀取新狀態。D：正確的失效通知模式。
 
-### Q4 — Missing predecessor
+### Q3 — Missing predecessor
 
 After listing lock children, a client calls exists(predecessor,true) and gets no node. What should it do?
 
@@ -394,18 +369,7 @@ After listing lock children, a client calls exists(predecessor,true) and gets no
 
 **答案：A。** A：前驅可能已在兩次 RPC 間消失。B：可能再無該刪除事件。C：不存在不證明自身 Session 到期。D：不能破壞其他請求。
 
-### Q5 — Conditional update
-
-Two clients read data version 4. A writes successfully with expected version 4; B then writes with expected version 4. What protects against a lost update?
-
-- A. B automatically becomes the new leader.
-- B. B's write is rejected with a version mismatch.
-- C. ZooKeeper merges arbitrary application data automatically.
-- D. Setting version=-1 strengthens the comparison.
-
-**答案：B。** A：CAS 與選舉無關。B：A 已使版本前進。C：語義合併由應用決定。D：-1 通常跳過檢查。
-
-### Q6 — sync()
+### Q4 — sync()
 
 Which statement matches the documented limitation of sync() in ZooKeeper 3.9.4?
 
@@ -416,7 +380,7 @@ Which statement matches the documented limitation of sync() in ZooKeeper 3.9.4?
 
 **答案：C。** A：官方記錄舊 Leader 情境限制。B：它不控制外部資源。C：保留真正的語義邊界。D：未等完成不能把它當已完成屏障。
 
-### Q7 — Stale lock holder
+### Q5 — Stale lock holder
 
 An expired client can still reach the external storage. What most directly helps storage reject its delayed writes after a new holder takes over?
 
@@ -427,30 +391,20 @@ An expired client can still reach the external storage. What most directly helps
 
 **答案：D。** A：不影響寫入權限。B：無此撤回保證。C：本地排序無法讓儲存識別舊權限。D：儲存必須原子拒絕落後 generation，token 來源也需正確。
 
-### Q8 — Leadership layers
-
-Which distinction is essential when discussing leader election with ZooKeeper?
-
-- A. Electing ZooKeeper's internal leader differs from an application electing its own leader using znodes.
-- B. Every application leader is the ZooKeeper server leader.
-- C. A Watch event is a quorum vote.
-- D. The smallest application znode replaces the ZAB recovery protocol.
-
-**答案：A。** A：服務實作與應用 recipe 是不同層。B：不同程序與責任。C：Watch 不投票。D：內部歷史恢復仍必要。
-
 ## 12. 來源與投影片對照
 
-| 講義頁碼 | 本章涵蓋的內容 |
-| --- | --- |
-| P63–P65 | 封面、協調服務定位與範圍 |
-| P66–P70 | Hadoop 歷史、平台元件與 metadata／主要資料分工 |
-| P71–P74 | 架構、Wait-free、Watch 與順序 |
-| P75–P79 | 多數、ZAB 恢復、廣播與 Multi-Paxos 比較 |
-| P80–P82 | Znode、API、Session、設定與成員註冊 |
-| P83–P87 | Lock queue、Thundering Herd、競爭與 crash |
-| P88–P89 | 讀取與 sync 邊界、銜接 Consistency；P89 的預告跨過下一份 P2P deck，不改動實際頁序 |
+| 講義 | 主題與原理 | 圖解與推演 | 下一個問題 |
+| --- | --- | --- | --- |
+| P63–P70 | 協調與資料路徑分工 | 圖 3.1，Worker 啟動 | 誰能回答設定？ |
+| P71–P74 | 本地讀取與監看 | F1 讀／寫路徑 | 兩次更新如何排序？ |
+| P75–P79 | ZAB、多數與合法歷史 | 圖 3.2，zxid (7,41) | 應用怎麼操作狀態？ |
+| P80–P82 | Znode、版本、Session、Watch | 圖 3.3，v4→v5、w1 到期 | 如何用這些操作排隊？ |
+| P83–P87 | 隊首、前驅監看與失效 | 圖 3.4–3.5，C1→C2、token 41→42 | 副本讀取會落後嗎？ |
+| P88–P89 | 本地讀取與 sync 的邊界 | v8 更新後讀到 v7 | P90 先轉入 P2P |
 
-延伸來源（查閱日期 2026-11-20）：
+延伸來源（ZooKeeper 文件及論文 2026-11-20，MIT 2026-11-22）：
+
+- [大學教材] [MIT 6.5840 Lecture 9 — ZooKeeper](https://pdos.csail.mit.edu/6.824/notes/l-zookeeper.txt)，協調器與資料儲存分工，以及讀取、版本和通知的使用方式。
 
 - [原始論文] Hunt、Konar、Junqueira、Reed，2010，[ZooKeeper: Wait-free coordination for Internet-scale systems](https://www.usenix.org/events/atc10/tech/full_papers/Hunt.pdf)，§2 的模型、Session 與 recipes；§3 的實作分工。課堂簡化與現行文件有差異時分別註明。
 - [官方文件] [ZooKeeper 3.9.4 Programmer's Guide](https://zookeeper.apache.org/doc/r3.9.4/zookeeperProgrammers.html)：Znode、version、Session、Watch 與一致性。
