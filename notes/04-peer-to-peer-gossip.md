@@ -21,6 +21,37 @@ flowchart LR
 
 P93 的 SETI@home 是利用邊緣運算資源的歷史動機，不表示工作分配系統已完全沒有中央角色。該頁的志願電腦數量與資料量保留為教材歷史敘述，不當成當前服務規模。
 
+### 1.1 課堂問答：Overlay Hop 的延遲到底從哪裡來？
+
+**Q：一個 Logical Hop 的傳輸時間，不就是底層 Physical Network 的路由時間嗎？**
+
+**A：是。** 一個 overlay hop 指應用層從某個 Peer 傳到下一個 Peer；底層仍由 TCP／UDP、IP Routing 與可能經過的多台 routers 承載。它不是獨立存在的第二條實體網路，也不是另外再疊加一次完整的 IP 傳輸時間。
+
+- 一個 logical hop 的耗時大致可拆成：**底層 IP 路徑的傳輸／傳播／排隊等延遲 + Peer 的應用層處理與轉送開銷**。
+- **一個 logical hop 不等於一個 router hop**；例如 Overlay 中 A→B 只有一跳，但底層可能是 A→R1→R2→R3→B。
+- 多跳 Overlay A→B→C→D 的封包可能分段經過多條 IP 路徑，且 B、C 須接收後再轉送。總耗時需逐段估算，不能只看 Overlay 圖的線條數。
+
+**講義 P94 的 50 ms × 5 = 250 ms 是教學假設**：只有在每個 logical hop 都約需 50 ms、各段依序執行時，才能如此加總。若已知「A 直達 D 的 IP 路徑為 50 ms」，並不能直接推出 A→B→C→D 等 Overlay 路徑每一跳都要 50 ms；實際延遲依各 Peer 間的底層路徑而異。
+
+### 1.2 課堂問答：Overlay Network 只是為了簡化拓樸圖嗎？
+
+**Q：Overlay Network 的具體目的，是否只是把複雜的實體拓樸畫得比較簡單？**
+
+**A：不是。圖形簡化只是呈現方式；真正目的在於讓應用程式在既有 Internet 上，自行定義邏輯鄰居、資料定位與訊息轉送規則。**
+
+**分層職責：**
+
+| 層次 | 回答的問題 | 主要機制 |
+| --- | --- | --- |
+| **IP／Physical Network** | 「已知目的 IP，封包怎麼送到那台主機？」 | IP addressing、routers、routing tables |
+| **P2P Overlay Network** | 「需要的資料／服務在哪個 Peer？接下來應詢問誰？」 | 邏輯拓樸、neighbor／routing state、lookup 與 membership |
+
+**具體例子：** Peer A 想取得某個 key 對應的檔案，但不知道由誰保存。Overlay 可以按照搜尋或 DHT 規則，將查詢從 A 經 B 轉送到負責該 key 的 C。底層每一段仍使用一般 IP Routing；找到 C 之後，實際檔案傳輸也**可能直接建立 A↔C 連線**，不必一定沿查詢路徑反向傳整份資料。若一開始就知道 C 的 IP／位置，應用程式也可以直接連接，不需要為此繞過 B。
+
+Overlay 因此可以支援 **Resource Discovery（資源發現）**、**Application-Level Routing（應用層路由）**、**Dynamic Membership（節點加入／離開管理）**，以及依架構而異的去中心化資源協作；但增加邏輯轉送與維護成本，也**不保證最短路徑或最低延遲**。不同 P2P 設計可能仍含 bootstrap 或中央索引，不可把「有 Overlay」等同於「完全沒有中央服務」。
+
+**結論：Overlay 不是用來取代 IP Routing，而是補上 IP 本身不知道「哪個 Peer 負責哪份資料」的應用層定位與組織機制。**
+
 ## 2. 從 Multicast、Napster 到 Gnutella
 
 > [課程講義] P95–P97；演算與拓樸例子為自製。
