@@ -1,34 +1,20 @@
 # Chapter 01 — 邏輯時鐘、全域狀態與檢查點（Logical Clocks, Global States, & Checkpointing）
 
-## 1. 本章要解決什麼問題？
+## 1. 轉帳紀錄為什麼會顯示先入帳，再扣款？
 
 > 課程依據：P19–P22、P28、P35。延伸：原文書 §5.2（PDF P276–P287）、§8.6（PDF P552–P558）。
 
-分散式程式沒有能原子讀取所有節點的共享記憶體。即使每台機器都能讀取自己的時間，訊息的延遲、時鐘漂移與處理暫停，仍使「哪件事先發生」和「大家現在的狀態」成為兩個不同問題。
+帳戶 A 在一台伺服器扣款 50 元，送出轉帳指令，帳戶 B 在另一台伺服器收到後入帳。兩台的時鐘只要差得比訊息傳送時間更多，讀日誌時就可能發現 B 的時間戳比較早。即使讀不到一個共同的實體時間，我們仍知道 B 要收到指令，A 得先送出。這種可從事件與訊息確立的先後，就是因果關係（Causality）。
 
-第一個問題是**因果關係（Causality）**：若 B 的執行可能受到 A 的影響，就不能把 B 排在 A 之前。邏輯時間用事件與訊息建立順序，不要求全體時鐘顯示同一秒。
-
-第二個問題是**全域狀態（Global State）**：若 A 已扣款、B 尚未入帳，這筆錢並沒有消失，而是存在傳輸中的訊息內。只把所有節點的記憶體各拍一張照片，可能漏掉在途資料，甚至記錄出「已收款、但從未付款」的矛盾。
-
-第三個問題是**回復（Recovery）**：節點故障後，最新的各自備份不一定能共同構成合法狀態。若 B 保留了 A 回滾後不再存在的訊息，B 也可能被迫回滾。
-
-```mermaid
-flowchart LR
-    E[事件與訊息] --> C[Logical Clock 與因果順序]
-    C --> G[Consistent Cut 與 Global State]
-    G --> S[Distributed Snapshot]
-    G --> R[Checkpoint 與 Rollback Recovery]
-```
-
-圖為概念依賴，不表示所有 Snapshot 實作都必須先交換 Vector Clock。Chandy–Lamport 本身使用 Marker 與 channel 順序建立邊界。
+順序確定後，再問兩個實作問題。若現在記錄兩邊的餘額，已扣但未入帳的 50 元要記在哪裡？若其中一台故障，存在哪些位置的備份能一起使用？本章先從訊息中的可觀測先後做起，再把同一條因果邊用在快照與回復。
 
 ## 2. 事件模型與 Happens-before
 
 > 課程依據：P21–P23。延伸：原文書 PDF P276–P278；[Lamport 1978 原論文](https://lamport.azurewebsites.net/pubs/time-clocks.pdf)，事件偏序與 Clock Condition。
 
-### 2.1 定義與假設
+### 2.1 找得到路徑，才能斷定有因果先後
 
-將執行視為歷史 `H` 中的事件集合。每個處理程序 `P_i` 的事件有本地順序，事件可為本地計算、`send(m)` 或 `recv(m)`。一次訊息接收與其傳送配對；此處不將訊息副本當作新的原始傳送。
+先把 A 的扣款、傳送，和 B 的接收、入帳各視為事件（Event）。A 本地的扣款先於傳送，B 本地的接收先於入帳。跨機器唯一用到的是傳送與接收間的順序。以此模型記下程序 `P_i` 的執行歷史 `H`，一次接收和對應的原始傳送配對。
 
 **先發生關係（Happens-before Relationship，也常寫 Happened-before）** 記作 `a → b`，是下列規則形成的最小傳遞關係：
 
@@ -40,17 +26,11 @@ flowchart LR
 
 例如 P1 編輯文件後傳給 P2，P2 收到後產生摘要，編輯先於摘要；P3 在未取得文件或相關訊息前獨立修改另一份副本，則與 P1 的編輯可能並行。人類透過電話傳遞的資訊若未建模，也不會出現在本系統的因果圖中。
 
-### 2.2 因果偏序與實體時間不能互換
+### 2.2 實體時間還能回答什麼？
 
 **偏序（Partial Order）** 允許某些事件不可比較；**全序（Total Order）** 則要求任兩個不同事件均可排序。為並行事件決定固定先後可便利排程，但這個額外順序不是新發現的因果關係。
 
-| 機制 | 回答的問題 | 可依賴的語義 | 成本與限制 | 用途 |
-| --- | --- | --- | --- | --- |
-| 實體時鐘（Physical Clock） | 大約何時、經過多久？ | 取決於同步誤差與單調性保證 | 需校時；wall clock 可能調整；未知誤差不能證明跨機因果 | 時間顯示、帶誤差界限的時間協定 |
-| Lamport Clock | 能否給出符合因果的數字順序？ | `a → b` 必有 `L(a) < L(b)` | 每事件與每訊息一個計數器；反向不成立 | 事件排序、協定編號的設計背景 |
-| Vector Clock | 哪個事件已知哪些因果歷史？ | 在固定程序模型下可辨認因果與並行 | 每訊息 O(N) metadata、合併 O(N)；成員變動需額外設計 | 因果除錯、版本衝突判讀 |
-
-技術補充：程序內測量 timeout 應使用適當的 monotonic clock；邏輯時鐘不以秒為單位，不能直接取代 timeout。只有在明確同步誤差界限下，實體時間才可支援更強的時間判斷。
+實體時鐘（Physical Clock）回答約在何時或經過多久。跨機比較要有已知同步誤差，測量逾時則通常用程序可讀取的單調時鐘（Monotonic Clock）。邏輯時鐘（Logical Clock）只記事件如何向前推進，值差 10 不能解讀為 10 秒。現在先試一個每個程序只存一個整數的版本。
 
 ## 3. Lamport Logical Clock
 
@@ -58,7 +38,7 @@ flowchart LR
 
 ### 3.1 狀態與更新規則
 
-每個 `P_i` 維護非負整數 `L_i`，初值為 0。本章採每事件增加 1；講義的增量 d 以 1 為典型值。
+想像 P2 本地已走到 1，收到 P1 標記為 2 的訊息。若只把本地加 1，接收和傳送會同為 2。蘭伯特邏輯時鐘（Lamport Logical Clock）會讓 P2 先看自己和訊息哪個值較大，再在之後分配一個新位置，得到 3。每個 `P_i` 維護一個初值為 0 的非負整數 `L_i`，這裡用 1 作為每次增量。
 
 ```text
 local_event at P_i:
@@ -95,6 +75,25 @@ receive(m, t) at P_i:
 4. P2 原為 5，收到 P1 的 9：`max(5,9)+1 = 10`。
 
 每條箭頭都滿足 send timestamp 小於 receive timestamp；各程序本地值嚴格遞增。這兩項查核足以檢查本例是否遵循更新規則。
+
+```mermaid
+sequenceDiagram
+    participant P1
+    participant P2
+    participant P3
+    Note over P2: 本地值 1
+    P1->>P2: 送出值 2
+    Note over P2: 收到後為 3
+    P2->>P3: 送出值 4
+    Note over P3: 本地 1 跳至 5，之後執行本地事件 6
+    Note over P1: 已執行本地事件 3
+    P3->>P1: 送出值 7
+    Note over P1: 收到後為 8
+    P1->>P2: 送出值 9
+    Note over P2: 本地 5 跳至 10
+```
+
+圖 1.1｜P24 的四條訊息。箭頭旁是傳送時間戳，接收欄另算 `max+1`；各程序沒有通訊的事件以本地順序為準。自繪，參考成大講義 P23–P24。
 
 ### 3.3 為何滿足 Clock Condition？
 
@@ -168,7 +167,7 @@ sequenceDiagram
     Note over P2: receive [5,5,4]
 ```
 
-圖省略 P2 最後的 local `[5,6,4]`；不同程序 local Note 的垂直位置僅為一個可行交錯，不增加原圖沒有的因果邊。
+圖 1.2｜把圖 1.1 的同四條訊息換成向量，P3 的狀態現在可沿訊息抵達 P1。圖省略 P2 最後的 local `[5,6,4]`，跨欄的垂直位置只是一個可行交錯。自繪，參考成大講義 P25–P26。
 
 ### 4.3 比較規則與可核算例子
 
@@ -207,7 +206,7 @@ sequenceDiagram
 
 ### 5.1 Local State 加上 Channel State
 
-令 `LS_i` 為 P_i 的本地狀態，`SC_ij` 為有向 channel P_i→P_j 的狀態。全域狀態可寫成 `GS = ({LS_i}, {SC_ij})`；使用集合族／tuple 表示避免將不同節點的變數混在一起。`SC_ij` 包含已送出但未在接收端快照內收到的訊息，稱為**在途訊息（In-transit Messages）**。
+回到轉帳例子。若 A 已扣款、B 還沒入帳，兩個餘額加起來少 50 元。要解釋這份觀測，得把 50 元記在 A→B 的通道。全域狀態（Global State）因此包含各程序的本地狀態 `LS_i` 和各有向通道的狀態 `SC_ij`，合寫為 `GS = ({LS_i}, {SC_ij})`。傳送已納入、接收尚未納入的轉帳指令，是在途訊息（In-transit Message）。
 
 **截面（Cut）** 在每個程序選擇一個本地事件前綴。截面內是 PAST，之後是 FUTURE。**一致截面（Consistent Cut）** 必須對因果前驅封閉：若 `b` 在 Cut 內且 `a → b`，則 a 也必須在內。
 
@@ -239,6 +238,8 @@ Cut Z = (P1 到 b，P2 到 d)：send、recv 都已包含，合法。
 
 講義 P30 的 C1 屬 Cut Y，m1 從 FUTURE 進入 PAST；C2 為一致截面，但 m4 的 send 已包含、receive 尚未包含，故 channel state 必須記錄 m4。
 
+圖 1.3｜同一則 m 在三種截面的位置。X 保留傳送但尚未接收，Y 讓接收失去來源，Z 保留兩者。自繪，參考成大講義 P29–P30。
+
 ### 5.3 為何不能只同時向所有節點詢問？
 
 不同節點收到詢問的時間不同。若接收端在入帳後回覆、送出端卻回報扣款前的狀態，兩份結果可能雙算金額。實體時間約略接近也不能消除此交錯；需要建立相互一致的邏輯邊界與 channel state。
@@ -258,7 +259,41 @@ Cut Z = (P1 到 b，P2 到 d)：send、recv 都已包含，合法。
 
 Snapshot 不要求全域暫停。只有本地記錄與發 Marker 的必要順序需要原子性或適當同步；不是把所有業務一直凍結到快照完成。
 
-### 6.2 角色、狀態與完整規則
+### 6.2 講義 P33：轉帳 50 元的完整推演
+
+初始 A 有 500 元，B 有 200 元。一次傳送代表 A 扣款 50；一次接收代表 B 入帳 50。假設 A→B、B→A 各為 FIFO channel，本例無其他轉帳。
+
+B 啟動快照時，先把自己的餘額記下，再送出邊界標記（Marker）給 A。從這一刻起，B 暫時把 A 寄來的轉帳也抄到通道紀錄。若 A 發回標記，B 就能關閉紀錄，因為 FIFO 讓 A 在邊界前送出的轉帳先於標記到達。
+
+```mermaid
+sequenceDiagram
+    participant A as A 初始 500
+    participant B as B 初始 200
+    Note over B: 啟動 Snapshot，記錄 LS_B=200
+    Note over B: 送出 B→A Marker，暫未到達 A
+    Note over A: 扣款 50，目前餘額 450
+    A->>B: Transfer 50
+    Note over B: 入帳後實際為 250，SC_AB 記錄 Transfer 50
+    B-->>A: 先前送出的 Marker 現在到達
+    Note over A: 記錄 LS_A=450
+    A->>B: Marker
+    Note over B: 關閉 SC_AB，內容為 Transfer 50
+```
+
+圖 1.4｜B 先記餘額並送出標記，轉帳在反方向先到 B，B 因此把 50 元記入通道。圖的 B→A 箭頭標示標記抵達時點。自繪，參考成大講義 P33。
+
+| 步驟 | 事件 | 實際餘額 A／B | 快照錄製結果 |
+| --- | --- | --- | --- |
+| 0 | 尚未啟動 | 500／200 | 無 |
+| 1 | B 記錄並送 Marker | 500／200 | `LS_B=200`；開始錄 A→B |
+| 2 | A 尚未收到 Marker，扣款並送 50 | 450／200 | 快照 A 尚未記錄 |
+| 3 | B 收到 50 | 450／250 | `SC_AB={50}`；`LS_B` 仍為 200 |
+| 4 | A 收到 B 的 Marker | 450／250 | `LS_A=450`；`SC_BA=空`；送 Marker |
+| 5 | B 收到 A 的 Marker | 450／250 | `SC_AB` 關閉 |
+
+快照總額為 `450 + 200 + 50 = 700`。若只加本地狀態，會得到 650，漏掉在途款項；若又把 B 的當下 250 加入，則混用不同時間的狀態而雙算。
+
+### 6.3 角色、狀態與完整規則
 
 Marker 是界定 channel 邊界的控制訊息，不是時間戳或故障投票。每個程序針對此次 Snapshot 維護：`recorded`、已記錄的 `LS`、各 incoming channel 是否仍在錄製、各 `SC`。若支援多個 Snapshot，Marker 與狀態還須帶 snapshot ID。
 
@@ -282,39 +317,7 @@ flowchart TD
     F -->|否| W[繼續處理並錄製一般訊息]
 ```
 
-圖不包含啟動者的主動開始分支；啟動者遵循第 1 步。首次 Marker channel 為空，是因為該 channel 在 Marker 前的訊息都已先到，且已包含於剛記錄的 LS。
-
-### 6.3 講義 P33：轉帳 50 元的完整推演
-
-初始 A 有 500 元，B 有 200 元。一次傳送代表 A 扣款 50；一次接收代表 B 入帳 50。假設 A→B、B→A 各為 FIFO channel，本例無其他轉帳。
-
-```mermaid
-sequenceDiagram
-    participant A as A 初始 500
-    participant B as B 初始 200
-    Note over B: 啟動 Snapshot，記錄 LS_B=200
-    Note over B: 送出 B→A Marker，暫未到達 A
-    Note over A: 扣款 50，目前餘額 450
-    A->>B: Transfer 50
-    Note over B: 入帳後實際為 250，SC_AB 記錄 Transfer 50
-    B-->>A: 先前送出的 Marker 現在到達
-    Note over A: 記錄 LS_A=450
-    A->>B: Marker
-    Note over B: 關閉 SC_AB，內容為 Transfer 50
-```
-
-圖以 Note 標示 B 提早送出但尚未到達的 Marker，待轉帳入帳後才畫出其到達；以下事件表列出同一個精確交錯。
-
-| 步驟 | 事件 | 實際餘額 A／B | 快照錄製結果 |
-| --- | --- | --- | --- |
-| 0 | 尚未啟動 | 500／200 | 無 |
-| 1 | B 記錄並送 Marker | 500／200 | `LS_B=200`；開始錄 A→B |
-| 2 | A 尚未收到 Marker，扣款並送 50 | 450／200 | 快照 A 尚未記錄 |
-| 3 | B 收到 50 | 450／250 | `SC_AB={50}`；`LS_B` 仍為 200 |
-| 4 | A 收到 B 的 Marker | 450／250 | `LS_A=450`；`SC_BA=空`；送 Marker |
-| 5 | B 收到 A 的 Marker | 450／250 | `SC_AB` 關閉 |
-
-快照總額為 `450 + 200 + 50 = 700`。若只加本地狀態，會得到 650，漏掉在途款項；若又把 B 的當下 250 加入，則混用不同時間的狀態而雙算。
+圖 1.5｜收到 Marker 後的兩種分支。首次 Marker 所在通道記為空，因為此前訊息已先到並進入本地狀態。啟動者的動作見同節第 1 步。自繪，參考成大講義 P31–P32。
 
 ### 6.4 正確性的核心理由
 
@@ -404,7 +407,7 @@ flowchart LR
     C31 -->|m3| C22
 ```
 
-圖重畫 P38，包含本地先後與原例的三條跨程序依賴。用路徑檢查排除直接與傳遞衝突；對「部分指定 checkpoint 能否擴充成全域集合」的普遍判定，仍須考慮可用候選與 Z-Path，不能把這張簡化圖當成所有模型的充分實作。
+圖 1.6｜本地順序與三條跨程序依賴。沿箭頭可檢查這組候選的直接與傳遞衝突。一般判定仍須核對可用候選與 Z-Path。自繪，參考成大講義 P38–P39。
 
 固定 `S={C1,2}`，依 P39：
 
@@ -449,18 +452,19 @@ repeat:
 
 每次至少讓一個程序嚴格回到更早 checkpoint，候選有限，故會停止或回報缺少候選。終止後只證明沒有 orphan；還需把「send 已有、recv 未有」的訊息從可靠儲存恢復或重播。若 channel 狀態完全遺失，單純通過 orphan 檢查不代表可啟動正確系統。
 
+也可以追問為什麼從最新候選開始。若目前選的傳送者狀態缺少某次 send，任何只允許保持或再往前回滾的版本仍缺少它。於是所有仍可行的組合都要把接收者移到相應 recv 之前。每一步選該位置之前的最新存檔，便只排除已證明不可行的較晚候選。在固定可用存檔、只回滾的模型中，這樣得到各程序可保留的共同最晚狀態。
+
 P40 的 checkpoint 垃圾回收說法也要加條件：只有確認保留的全域 Recovery Line、必要訊息／日誌與故障涵蓋範圍都足夠，才可刪除更舊狀態。不能只選到一份 local checkpoint 就刪掉別台可能需要的歷史。
 
 ## 8. Checkpoint 技術的取捨與真實系統設計
 
 > 課程依據：P35–P40。以下技術分類為延伸補充：原文書 PDF P552–P558，尤其 §8.6.2–§8.6.3。
 
-| 方法 | 執行時機制與成本 | 故障後行為 | 主要限制 | 適用情境 |
-| --- | --- | --- | --- | --- |
-| 非協調式（Uncoordinated Checkpointing） | 各程序自行落盤；正常期間少協調訊息 | 分析依賴、多次回滾 | 無用 checkpoint、Domino、舊存檔保留壓力 | 能接受回復分析且依賴可追蹤的工作 |
-| 協調式（Coordinated Checkpointing） | 共同建立一致邊界；可能阻塞或額外控制訊息 | 可直接選已完成的全域 checkpoint | 協調者故障與未完成批次需處理；落盤仍可能昂貴 | 希望回復流程單純的固定參與群體 |
-| 通訊誘發式（Communication-Induced Checkpointing） | 夾帶依賴 metadata，必要時強制 checkpoint | 避免特定無用 checkpoint／Z-Cycle | 強制存檔時機難預測；正確性依協定而定 | 想保留局部自主性並限制回滾 |
-| Checkpoint + Message Logging | 保存 checkpoint 與非決定事件／訊息順序；可能增加同步 I/O | 從 checkpoint 重播，減少重做工作 | 漏記非決定性會導致重播分歧；須處理 duplicate 與外部輸出 | 需精確重播且可負擔 logging 成本的服務 |
+剛才 P、Q 各自選時間存檔，正常執行時少了協調訊息，故障後卻得追蹤依賴並多次回滾。這是非協調式檢查點（Uncoordinated Checkpointing）。若回復時間更重要，可以改用協調式檢查點（Coordinated Checkpointing），執行期間先取得可共同回復的邊界。這會增加控制訊息或等待，還得處理協調者故障和未完成批次。
+
+通訊誘發式檢查點（Communication-Induced Checkpointing）讓各程序保有自行存檔的彈性，也在訊息夾帶依賴資訊，遇到協定指定的情況才強制存檔。這能依採用的規則避免無用檢查點或 Z-Cycle，代價是不能完全自行控制何時落盤。
+
+另一條路是訊息記錄（Message Logging）。只要把足以重現執行的資訊可靠保留，故障後就能從較舊的檢查點重播，避免全部重做。它把成本從恢復時的重算移到平時保存訊息與事件資訊，有些方案還須在正常路徑同步寫日誌。
 
 Message Logging 不只是把訊息 payload 寫檔。若程序會讀取隨機數、系統時間或競爭式執行緒結果，還要記錄會改變重播的非決定事件，或限制應用為可重播模型。少取 checkpoint 可以減少大型狀態落盤，但增加訊息日誌與回復設計成本。
 
@@ -474,21 +478,9 @@ Message Logging 不只是把訊息 payload 寫檔。若程序會讀取隨機數�
 
 自製情境：快照記錄來源 offset=100 與累計總額=500，故障時已處理到 offset=105。回復先載入這份狀態，再從快照規定的位置重播後續資料，而不是只回復總額卻繼續從 106 讀取。否則 101–105 的效果可能遺失；若輸出端已對外寫入，又沒有交易或冪等機制，重播也可能造成外部重複。這說明一致快照與端到端輸出語義必須一起設計。
 
-## 9. 常見誤解與速查
+## 9. 從重建歷史到決定命令順序
 
-| 誤解 | 精確說法 |
-| --- | --- |
-| Lamport 值較小就一定造成較大的事件 | 只能由因果推出遞增，不能反推 |
-| Concurrent 就是同一毫秒 | 是沒有已建模的因果路徑 |
-| Vector 每分量都嚴格較小才算先於 | 全部分量不大於，至少一個嚴格較小即可 |
-| 所有跨 Cut 的訊息都違法 | 已送未收是合法 channel state；已收未送才矛盾 |
-| Marker 會同步各機實體時鐘 | Marker 建立 channel 邏輯邊界 |
-| Snapshot 一定是某個真實瞬間 | 可以是因果等價重排中的可達狀態 |
-| Snapshot 完成等於回復能力完成 | 還需持久化、訊息重建與外部輸出處理 |
-| 各程序最新 checkpoint 一定最好 | 可能不一致並觸發連鎖回滾 |
-| Z-Cycle 表示時間旅行 | 它是 checkpoint interval 上的 zigzag 依賴，不是因果循環 |
-
-速查：`recv := max + 1`；Vector 使用逐分量 max 後只增自己的分量；Cut 要因果封閉；Snapshot 要記 local states 與 channels；Recovery Line 要避免 orphan 並具備可恢復的資料。
+在轉帳案例裡，時鐘讓我們找出可能影響入帳的事件，快照讓我們知道 50 元還在哪裡，檢查點則讓我們選擇可以重新開始的位置。若接下來兩台伺服器同時收到互斥的提款要求，這些工具可以檢查它們看到了什麼，但服務還要讓它們採用同一個執行順序。這就是 [Chapter 02 的共識問題](02-fault-tolerance-paxos-raft.md)。
 
 ## 10. 英文選擇題與逐項解析
 
@@ -538,18 +530,7 @@ A sends m before recording its local state, then sends a marker. The channel is 
 
 **答案：A。** A：B 首次 Marker 把 channel 設為空，m 遲到而漏記。B：Marker 不更新實體時間。C：故障模型與投票均無關。D：原始 Marker 規則沒有這個自動補救機制。
 
-### Q5 — First marker
-
-A process has not recorded its state when it receives the first marker on channel C. What is the recorded state of C in the standard FIFO algorithm?
-
-- A. Every message ever sent on C.
-- B. Every message received after the marker.
-- C. The empty sequence.
-- D. An arbitrary estimate based on elapsed time.
-
-**答案：C。** A：過去已接收訊息反映於 LS，不應全部重記。B：Marker 之後屬快照邊界後的訊息。C：FIFO 保證 Marker 前訊息已先抵達。D：無已知延遲上界，不能靠 timeout 估計 channel 為空。
-
-### Q6 — Rollback
+### Q5 — Rollback
 
 P rolls back to a checkpoint before sending m, while Q's selected checkpoint includes receiving m. Without message logging, what must recovery do?
 
@@ -560,17 +541,6 @@ P rolls back to a checkpoint before sending m, while Q's selected checkpoint inc
 
 **答案：B。** A：留下 orphan。B：先移除孤兒接收，再查是否引發其他依賴。C：改 timestamp 無法補回應用狀態。D：發生過傳送不代表其可恢復狀態仍在。
 
-### Q7 — Zigzag paths
-
-What distinguishes a zigzag path from an ordinary causal message path?
-
-- A. A message may be received before it was physically sent.
-- B. Every zigzag path is a causal path.
-- C. The next send may precede the previous receive within the same checkpoint interval.
-- D. Checkpoint intervals are irrelevant.
-
-**答案：C。** A：個別訊息仍遵守 send→receive。B：Z-Path 較一般，不必為因果路徑。C：這是允許形成 Z-Cycle 的關鍵。D：是否同一或後續 interval 正是定義條件。
-
 ## 11. 可重跑的算例檢查
 
 [教學補充／推導] 在 Repository 根目錄執行 `python tools/verify-examples.py`，不需第三方套件。程式核算 P24／P26 的全部事件、以事件祖先集合交叉檢查 225 組向量關係、驗證 P33 金額守恆、枚舉三程序各三份 checkpoint 的 27 種組合，並檢查本章的 Domino 回滾順序。
@@ -578,6 +548,14 @@ What distinguishes a zigzag path from an ordinary causal message path?
 預期輸出包含 `PASS: P24/P26 timestamps and 225 event-pair causality checks`、`PASS: P33 conservation; 27 checkpoint combinations; R-Graph; domino trace`，最後為 `All finite example checks passed; this is not a full protocol proof.`。這是有限算例驗證，不是 Chandy–Lamport 或回復服務的完整實作測試。
 
 ## 12. 參考資料與閱讀定位
+
+| 講義 | 主題與原理 | 圖解與推演 | 下一個問題 |
+| --- | --- | --- | --- |
+| P18–P24 | 因果邊與整數計數 | 圖 1.1，四次接收的 max+1 | 數字能反推因果嗎？ |
+| P25–P27 | 向量保存各來源前綴 | 圖 1.2，逐分量合併 | 怎樣選擇全域狀態？ |
+| P28–P30 | 截面對因果前驅封閉 | 圖 1.3，比較 X、Y、Z | 如何收集合法截面？ |
+| P31–P34 | FIFO 讓 Marker 界定通道 | 圖 1.4–1.5，50 元守恆 | 要如何故障後重啟？ |
+| P35–P40 | 依賴、回復線與重播 | 圖 1.6，三程序與連鎖回滾 | 副本能否先約定順序？ |
 
 | 來源層級 | 來源與本章用途 |
 | --- | --- |
