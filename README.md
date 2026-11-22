@@ -2,7 +2,7 @@
 
 將國立成功大學 Prof. Hung-Chang Hsiao 的 Distributed Systems（Fall 2026）講義擴寫成可推演、除錯與比較設計的工程筆記。使用繁體中文與 American English 技術名詞；以完整協定、數值案例、故障反例與附解析的英文單選題為主。
 
-**P1–P117 已撰寫：新增 ZooKeeper（P63–P89）與 P2P／Gossip（P90–P117）。** 使用者已確認的學習進度仍為 P1–P62；新增兩章標為已整理、待閱讀。下一個整理單元從 P118 開始。[筆記目錄](notes/README.md)集中列出教材資訊、來源層級、學習狀態與上下章導覽；各篇直接進入技術內容。
+**Chapter 00–04（P1–P117）已完成教學改版。** 從正常案例和圖解引入機制，再解釋故障、正確性與限制。使用者已確認的學習進度為 P1–P62，Chapter 03／04 已整理、待閱讀。下一個整理單元從 P118 開始。[筆記目錄](notes/README.md)
 
 ## 章節索引與進度
 
@@ -35,7 +35,7 @@
 - Ongaro、Ousterhout，[Raft Extended Version](https://raft.github.io/raft.pdf)。
 - [原文書作者頁](https://www.distributed-systems.net/index.php/books/ds4/)、[Raft 資源](https://raft.github.io/)、[etcd v3.6 Learner 文件](https://etcd.io/docs/v3.6/learning/design-learner/)。
 
-本次兩章另使用 [ZooKeeper 3.9.4 文件](https://zookeeper.apache.org/doc/r3.9.4/zookeeperProgrammers.html)、ZooKeeper／Gossip／CAN／Chord／CFS 的原始論文，以及 Chord 後續正確性研究；完整書目與本機下載對照見 [教材紀錄](reference/README.md)。各篇列出實際使用範圍與查閱日期；Chapter 00–02 為 2026-11-19，Chapter 03–04 為 2026-11-20。
+ZooKeeper、Gossip、CAN、Chord 與 CFS 的技術細節另參考原始論文及官方文件。改版也對照原文書與 MIT 6.5840 的 Introduction、Raft 和 ZooKeeper 講義。各篇章末列出使用範圍及投影片對照，原始文獻的本機下載對照見教材紀錄。[MIT 6.5840 課程表](https://pdos.csail.mit.edu/6.824/schedule.html) · [教材紀錄](reference/README.md)
 
 ## GitHub ↔ HackMD 使用方式
 
@@ -53,4 +53,4 @@ GitHub 是版本控制來源，HackMD 用於閱讀、註解與分享；每篇 No
 
 教材文字與指定圖表已核對；本機驗證項目及實際結果記錄於 [驗證紀錄](VALIDATION.md)。本機渲染、GitHub 實際顯示、HackMD 實際顯示分開回報，不以語法檢查代替線上驗收。
 
-Chapter 00–02 已曾推送至 GitHub；新增兩章的提交／線上驗收狀態見驗證紀錄。後續逐篇連結 HackMD 並驗收導覽與圖表；取得明確任務後從 P118 整理 Consistency。整理 P145、P205、P207、P208 前仍需確認教材遺失圖形資源的解析警告。未展開的章節不建立空白檔案，也不標示為完成。
+教學改版的本機檢查與雙平台驗收狀態見驗證紀錄。P118 起尚待整理。

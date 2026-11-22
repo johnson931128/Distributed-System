@@ -4,7 +4,7 @@
 
 [課程講義] National Cheng Kung University，Prof. Hung-Chang Hsiao，Distributed Systems，Fall 2026。本機教材 `reference/整包.pdf` 共 270 頁；所有課程 P1–P270 均指此檔 **1-based 實體頁碼**，不採各 deck 頁尾的局部編號。
 
-使用者已確認的閱讀進度仍為 **P1–P62 已學習，P63 為待閱讀起點**。筆記已整理至 P117，共五篇；新增 Chapter 03／04 為已整理、待閱讀，不代替使用者宣告完成學習。下一個筆記整理單元為 P118 的 Consistency。撰寫進度與 GitHub／HackMD 線上渲染驗收分開記錄。
+使用者已確認的閱讀進度為 **P1–P62 已學習，P63 為待閱讀起點**。Chapter 00–04 均已完成教學改版，03／04 待閱讀。每章末尾的對照表列出投影片、教學主題、圖解、算例和銜接問題。下一個整理單元為 P118 的 Consistency。
 
 原文書為 van Steen、Tanenbaum 的 *Distributed Systems*，4th edition，題名頁 Version 4.03x，共 685 頁。教材差異、來源指紋與頁碼對應見 [教材核對紀錄](../reference/README.md)。原始 PDF 留在本機，不公開提交。
 
