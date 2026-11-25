@@ -16,7 +16,7 @@
 
 ### 2.1 故障模型是演算法保證的邊界
 
-**部分故障 (Partial Failure) ** 指某些元件故障時, 其他節點仍在運作. 程式看到的是訊息與本地狀態, 無法直接讀取遠端是否"真的壞了".
+**部分故障 (Partial Failure)** 指某些元件故障時, 其他節點仍在運作. 程式看到的是訊息與本地狀態, 無法直接讀取遠端是否"真的壞了".
 
 若 A 掉電停止執行, 就是當機故障 (Crash Failure). 若它還在處理請求, 但某個封包沒有收發成功, 則是遺漏故障 (Omission Failure). 兩者都可使 B 一時沒收到回覆. 再把情況改成 A 有意在同一編號對 B 和 C 發出互相矛盾的接受回覆, 這屬於拜占庭故障 (Byzantine Failure). 標準 Paxos 和 Raft 依賴投票節點遵守協定, 無法把這第三種情況當成普通失聯處理.
 
@@ -26,7 +26,7 @@
 
 ### 2.2 非同步, Timeout 與懷疑
 
-**非同步網路 (Asynchronous Network) ** 不給可依賴的訊息延遲或相對程序速度上界. 若設定 500 ms timeout, 600 ms 尚未回覆的原因可能是 crash, 網路延遲, 磁碟停頓, 排程或 garbage collection.
+**非同步網路 (Asynchronous Network)** 不給可依賴的訊息延遲或相對程序速度上界. 若設定 500 ms timeout, 600 ms 尚未回覆的原因可能是 crash, 網路延遲, 磁碟停頓, 排程或 garbage collection.
 
 ```text
 執行 A：Leader 已 crash                → 500 ms 無回覆
@@ -34,9 +34,9 @@
 觀測者在 500 ms 時看到的資訊相同。
 ```
 
-**故障偵測器 (Failure Detector) ** 可輸出懷疑, 並驅動重試或新選舉; 它不應讓節點以"我覺得對方死了"為理由跳過 Promise, 投票或 quorum 規則. 誤判時舊 Leader 與新候選者可能同時活著, 協定必須仍安全.
+**故障偵測器 (Failure Detector)** 可輸出懷疑, 並驅動重試或新選舉; 它不應讓節點以"我覺得對方死了"為理由跳過 Promise, 投票或 quorum 規則. 誤判時舊 Leader 與新候選者可能同時活著, 協定必須仍安全.
 
-**部分同步 (Partial Synchrony) ** 可作為進展條件: 系統在未知時間後, 延遲與速度進入足夠穩定的範圍, 使 timeout 與 Leader 最終能穩定工作. Safety 不應依賴每次 timeout 都準確; Liveness 則通常需要這類額外假設.
+**部分同步 (Partial Synchrony)** 可作為進展條件: 系統在未知時間後, 延遲與速度進入足夠穩定的範圍, 使 timeout 與 Leader 最終能穩定工作. Safety 不應依賴每次 timeout 都準確; Liveness 則通常需要這類額外假設.
 
 ## 3. Safety, Liveness 與 FLP
 
@@ -44,16 +44,16 @@
 
 ### 3.1 正確性有不同的量化方式
 
-- **安全性 (Safety) **: 不會出現不合法結果. 單一 instance 只能選定一個值, 且必為某個合法提議值; Learner 不能把尚未 Chosen 的值宣稱為已選定.
-- **活性 (Liveness) **: 在指定進展條件下, 最終會選到值, 且結果可被學到. 必須說明條件, 例如可用多數, 訊息最終傳遞, 穩定協調者與持續重試.
+- **安全性 (Safety)**: 不會出現不合法結果. 單一 instance 只能選定一個值, 且必為某個合法提議值; Learner 不能把尚未 Chosen 的值宣稱為已選定.
+- **活性 (Liveness)**: 在指定進展條件下, 最終會選到值, 且結果可被學到. 必須說明條件, 例如可用多數, 訊息最終傳遞, 穩定協調者與持續重試.
 
 不一致決定一旦發生, 後來統一結果也不能抹去先前的 Safety violation; 相反地, 暫時未完成可以只是等待, 無法僅憑有限等待證明永不終止.
 
 ### 3.2 FLP 的假設與結論
 
-**FLP 不可能性 (Fischer–Lynch–Paterson Impossibility) ** 針對完全非同步, 確定性 message-passing 共識, 即使最多只有一個程序可能 crash, 且通道可靠, 也不能對所有 admissible executions 保證終止, 同時維持非平凡決定與 Agreement.
+**FLP 不可能性 (Fischer–Lynch–Paterson Impossibility)** 針對完全非同步, 確定性 message-passing 共識, 即使最多只有一個程序可能 crash, 且通道可靠, 也不能對所有 admissible executions 保證終止, 同時維持非平凡決定與 Agreement.
 
-這不是"每次 crash 都無法決定", 也不是"網路一定要丟包才會卡住". 證明透過維持**雙價狀態 (Bivalent State) ** 的排程, 構造一直尚可導向 0 或 1 的執行; 公平執行中的訊息不必永遠不送達, 仍可持續延後關鍵轉移而避免決定.
+這不是"每次 crash 都無法決定", 也不是"網路一定要丟包才會卡住". 證明透過維持 **雙價狀態 (Bivalent State)** 的排程, 構造一直尚可導向 0 或 1 的執行; 公平執行中的訊息不必永遠不送達, 仍可持續延後關鍵轉移而避免決定.
 
 P49 的 A 提 0, B 提 1, 等待 C 是直覺示意, 不是 FLP 的形式證明. A 與 B 若依正確 quorum 協定已可決定, C 的遲到票不會自動推翻結果; Consensus 也不是把所有初始票收齊才進行一次政治投票.
 
@@ -65,7 +65,7 @@ P49 的 A 提 0, B 提 1, 等待 C 是直覺示意, 不是 FLP 的形式證明. 
 
 > 課程依據: P50, P52–P53; 推導為教學補充. 延伸: 原文書 §8.2.4; [Paxos Made Simple](https://lamport.azurewebsites.net/pubs/paxos-simple.pdf), §2.
 
-**多數法定人數 (Majority Quorum) ** 只計算 Acceptor. 固定共有 N 個 Acceptor, quorum 大小 $q=\left\lfloor\frac{N}{2}\right\rfloor+1$.
+**多數法定人數 (Majority Quorum)** 只計算 Acceptor. 固定共有 N 個 Acceptor, quorum 大小 $q=\left\lfloor\frac{N}{2}\right\rfloor+1$.
 
 | N | q | 為進展最多可不可達的個數 $N-q$ |
 | --- | --- | --- |
@@ -112,7 +112,7 @@ accepted_v = None           # 對應的值；None 在此表示尚無記錄
 
 三者不能合成一個"目前提案". 例如`promised_n=20, accepted_n=12, accepted_v=Y` 合法: 它答應未來拒絕 $<20$, 但過去確實接受過 $(12,Y)$. 新 Promise 不能抹除舊 Accepted.
 
-**提案編號 (Proposal Number, 也稱 Ballot) ** 是全域唯一且可排序的編號, 常實作為`(counter, proposer_id)` 字典序. 每個 Proposer 要能選出比已知高編號更大的新編號, 重啟也不得將同一編號用於不同值. 本文用 10, 12, 20 表示已確保唯一的編號, 不靠實體時間正確同步.
+**提案編號 (Proposal Number, 也稱 Ballot)** 是全域唯一且可排序的編號, 常實作為`(counter, proposer_id)` 字典序. 每個 Proposer 要能選出比已知高編號更大的新編號, 重啟也不得將同一編號用於不同值. 本文用 10, 12, 20 表示已確保唯一的編號, 不靠實體時間正確同步.
 
 先將狀態可靠保存, 再回 Promise/Accepted; 否則重啟可能背棄已送出的承諾. 若日誌與磁碟永久遺失, 必須透過安全的重新加入流程恢復, 不能直接清空當成原 Acceptor 回來投票.
 
@@ -168,7 +168,7 @@ P58 主要展示前兩階段. 圖 2.1 的 Learn 與 Applied 另依 P54 接上.
 - 若所有 Promise 都沒有 Accepted 記錄, 可選自己的合法提議值.
 - 否則在所有回報的 Accepted 中, 取`accepted_n` 最大者, 使用其`accepted_v`.
 
-最大的是**歷史提案編號**, 不是 Value 的大小, 也不是回覆最先抵達的次序. 選值完成後, 同一 instance, 同一 n 不得換值.
+最大的是 **歷史提案編號**, 不是 Value 的大小, 也不是回覆最先抵達的次序. 選值完成後, 同一 instance, 同一 n 不得換值.
 
 ### 7.3 Phase 2: Accept/Accepted
 
@@ -193,7 +193,7 @@ Accept 到達時, Acceptor 不必曾經回覆這位 Proposer 的 Prepare; 條件
 
 ### 7.4 Learn/Commit 與應用
 
-P54 將結果通知稱作 **Phase 3 (Commit/Learn) **. 經典 Basic Paxos 的標準核心為 Phase 1 和 Phase 2; Learner 得知結果可用協調者通知, Acceptor 直接通知或其他傳播機制.
+P54 將結果通知稱作 **Phase 3 (Commit/Learn)**. 經典 Basic Paxos 的標準核心為 Phase 1 和 Phase 2; Learner 得知結果可用協調者通知, Acceptor 直接通知或其他傳播機制.
 
 若 Learner 相信正確, 非 Byzantine Proposer 的通知, Proposer 可在確認多數後送`Commit(instance,n,v)`; 若由 Accepted 通知自行判斷, 必須驗證 instance, n, v, 不同 Acceptor 與 quorum. 不能收到單一 Acceptor 的 Accepted 就 Applied.
 
@@ -309,7 +309,7 @@ P1 取得 Promise 10, P2 先取得 20, P1 再升 30, P2 再升 40; Phase 2 持�
 
 ### 10.1 一個值如何擴充成命令序列?
 
-Basic Paxos 決定單一 instance 的值. **Multi-Paxos** 將每個日誌位置看作一個共識 instance, 讓系統決定一連串命令. **複寫日誌 (Replicated Log) ** 的位置稱為 **日誌索引 (Log Index/Slot) **, 與 Proposal Number 不同.
+Basic Paxos 決定單一 instance 的值. **Multi-Paxos** 將每個日誌位置看作一個共識 instance, 讓系統決定一連串命令. **複寫日誌 (Replicated Log)** 的位置稱為 **日誌索引 (Log Index/Slot)**, 與 Proposal Number 不同.
 
 ```text
 slot 1: ballot 10 -> set(x, 1)
@@ -321,7 +321,7 @@ Ballot 10 可以服務多個 slot; slot 2 也可能曾經在 ballot 8 接受過�
 
 ### 10.2 Stable Leader 到底省下什麼?
 
-**穩定領導者 (Stable Leader) ** 先以某個 Ballot 完成涵蓋適用 slots 的 Phase 1, 取得多數承諾與相關歷史. 只要權限仍有效, 對後續可安全使用的位置, 可直接做 Phase 2, 而不必每筆命令重新 Prepare/Promise.
+**穩定領導者 (Stable Leader)** 先以某個 Ballot 完成涵蓋適用 slots 的 Phase 1, 取得多數承諾與相關歷史. 只要權限仍有效, 對後續可安全使用的位置, 可直接做 Phase 2, 而不必每筆命令重新 Prepare/Promise.
 
 不能把"曾在 slot 1 做過 Prepare"自動當成全體未來 slots 的權限; 實作必須定義 Promise 的範圍, 以及如何取得各 slot 已接受的值. 換 Leader 後也必須恢復未完成 slots, 保留可能已 Chosen 的命令, 必要時以合法 no-op 補洞, 不能任意覆蓋未知位置.
 
@@ -374,7 +374,7 @@ C 可較晚用相同前綴檢查追上. A 收到 B 的持久 ACK 後得知多數
 
 固定 N 個 voting servers, Crash 模型, 可持久化儲存, 基本 quorum 仍為多數. 成員變更, 快照傳輸與 PreVote 等實作擴充不在這份核心流程內; 它們需要另行規範.
 
-**任期 (Term) ** 是單調增加的邏輯 epoch; 每個 Term 最多一個成功當選的 Leader, 也可能沒有 Leader. 不同 Term 的 Leader 可在分區中暫時都自認為在任, 但舊 Term 不能繞過多數與任期檢查繼續提交.
+**任期 (Term)** 是單調增加的邏輯 epoch; 每個 Term 最多一個成功當選的 Leader, 也可能沒有 Leader. 不同 Term 的 Leader 可在分區中暫時都自認為在任, 但舊 Term 不能繞過多數與任期檢查繼續提交.
 
 | 狀態 | 用途 | 保存方式 |
 | --- | --- | --- |
@@ -390,7 +390,7 @@ $\mathrm{lastApplied}\le\mathrm{commitIndex}$. 跟隨者擁有某個 log entry, 
 
 ### 11.3 Leader Election 與 RequestVote
 
-**追隨者 (Follower) ** 等待 Leader 的 AppendEntries/heartbeat; 若 election timeout 到期, 轉為**候選者 (Candidate) **:
+**追隨者 (Follower)** 等待 Leader 的 AppendEntries/heartbeat; 若 election timeout 到期, 轉為 **候選者 (Candidate)**:
 
 1.`currentTerm += 1`, 持久化, 投自己一票並保存 votedFor.
 2. 發投票請求 (`RequestVote`), 帶上`term`, `candidateId`, `lastLogIndex` 及`lastLogTerm`. 重設隨機選舉逾時.
@@ -536,7 +536,7 @@ A server receives no response before a timeout in a fully asynchronous system. W
 - C. The remote server is suspected; delay and crash remain indistinguishable from this observation.
 - D. It may safely reduce the configured quorum size.
 
-**答案: C. ** A: 延遲與暫停也可能造成 timeout. B: 多數可能已接受, 只是回覆遺失. C: 精確描述本地資訊. D: 擅改 quorum 會破壞相交保證.
+**答案: C.** A: 延遲與暫停也可能造成 timeout. B: 多數可能已接受, 只是回覆遺失. C: 精確描述本地資訊. D: 擅改 quorum 會破壞相交保證.
 
 ### Q2 — Adoption
 
@@ -547,7 +547,7 @@ For Prepare(20), a Proposer's Phase 1 quorum reports (12,Y) and (8,X). What must
 - C. Accept(20,Y).
 - D. Accept(20,max(X,Y)).
 
-**答案: C. ** A: 12 是歷史編號, 不是本輪. B: 8 低於 12. C: 沿用最高歷史的值, 配本輪 20. D: 規則不比較 Value 數值.
+**答案: C.** A: 12 是歷史編號, 不是本輪. B: 8 低於 12. C: 沿用最高歷史的值, 配本輪 20. D: 規則不比較 Value 數值.
 
 ### Q3 — Chosen without knowledge
 
@@ -558,7 +558,7 @@ Two Acceptors durably accept (10,A), but all their replies are lost. Which state
 - C. A Learner may apply any other value after a timeout.
 - D. The Acceptors should erase A to unblock the system.
 
-**答案: B. ** A: Chosen 以接受歷史定義, 不以回覆到達定義. B: 已形成多數. C: timeout 不撤銷選定結果. D: 刪除必要歷史可能使後續違反 Safety.
+**答案: B.** A: Chosen 以接受歷史定義, 不以回覆到達定義. B: 已形成多數. C: timeout 不撤銷選定結果. D: 刪除必要歷史可能使後續違反 Safety.
 
 ### Q4 — Raft log freshness
 
@@ -569,7 +569,7 @@ A Raft voter ends at (lastLogTerm=4,lastLogIndex=8). Which candidate passes the 
 - C. (5,6).
 - D. All three.
 
-**答案: C. ** A: 先比 Term, 較長無法彌補較舊. B: 同 Term 卻 index 較小. C: 最後 Term 較新. D: 前兩者均不通過.
+**答案: C.** A: 先比 Term, 較長無法彌補較舊. B: 同 Term 卻 index 較小. C: 最後 Term 較新. D: 前兩者均不通過.
 
 ### Q5 — Old-term commitment
 
@@ -580,7 +580,7 @@ A Raft leader in term 4 observes that an entry from term 2 is stored on a majori
 - C. Wait until a current-term entry is safely committed, which can commit the preceding entry indirectly.
 - D. Ask a Learner to cast an additional vote.
 
-**答案: C. ** A: 缺少 currentTerm 條件, 可能出現 Figure 8 類反例. B: 舊 entry 可隨前綴間接提交. C: 正確保護跨 Term 的完整性. D: Learner 不補足投票多數, 亦無法解此問題.
+**答案: C.** A: 缺少 currentTerm 條件, 可能出現 Figure 8 類反例. B: 舊 entry 可隨前綴間接提交. C: 正確保護跨 Term 的完整性. D: Learner 不補足投票多數, 亦無法解此問題.
 
 ## 15. 可重跑的算例檢查
 
