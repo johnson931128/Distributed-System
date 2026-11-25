@@ -19,7 +19,7 @@
 **先發生關係 (Happens-before Relationship, 也常寫 Happened-before)** 記作 $a\to b$, 是下列規則形成的最小傳遞關係:
 
 1. 同一程序中, a 在 b 之前執行, 則 $a\to b$.
-2. $\operatorname{send}(m)\to\operatorname{recv}(m)$.
+2. $\mathrm{send}(m)\to\mathrm{recv}(m)$.
 3. 若 $a\to b$ 且 $b\to c$, 則 $a\to c$.
 
 若既無 $a\to b$, 也無 $b\to a$, 稱為 **並行事件 (Concurrent Events)**, 記作 $a\parallel b$. 這代表模型內沒有因果路徑, 不代表兩事件在實體世界同時發生, 也不保證它們寫入相同資料時不會衝突.
@@ -97,7 +97,7 @@ sequenceDiagram
 
 ### 3.3 為何滿足 Clock Condition?
 
-[教學補充/推導] 同一程序的事件都遞增, 故保留本地先後; 接收時取最大值再加一, 故接收必大於傳送. 任一因果路徑都是這兩種邊串接, 整數 $<$ 具有傳遞性, 因此 $a\to b\implies L(a)<L(b)$.
+同一程序的事件都遞增, 故保留本地先後; 接收時取最大值再加一, 故接收必大於傳送. 任一因果路徑都是這兩種邊串接, 整數 $<$ 具有傳遞性, 因此 $a\to b\implies L(a)<L(b)$.
 
 但逆向不成立. 假設 P1 在沒有收發訊息時執行兩個事件, timestamp 為 1, 2; P2 獨立執行三個事件, timestamp 為 1, 2, 3. P1 的第二個事件值 2 小於 P2 的第三個事件值 3, 兩者仍可能沒有因果關係.
 
@@ -194,9 +194,9 @@ sequenceDiagram
 
 ### 4.4 真實用途與限制
 
-[延伸補充] 原文書 §5.2.2 用因果歷史解釋向量, P12 則將 Amazon Dynamo 的 Vector Clocks 列為報告方向. 以下用物件版本說明實際用途.
+原文書 §5.2.2 用因果歷史解釋向量, P12 則將 Amazon Dynamo 的 Vector Clocks 列為報告方向. 以下用物件版本說明實際用途.
 
-[原始論文/延伸補充] [Dynamo: Amazon's Highly Available Key-value Store](https://cdn.amazon.science/ac/1d/eb50c4064c538c8ac440ce6a1d91/dynamo-amazons-highly-available-key-value-store.pdf) (2007), §4.4 使用 Vector Clock 追蹤物件版本因果: 可比較時捨棄被涵蓋的舊版本; 無法比較時保留分歧, 由應用進行語義合併. 自製例: 共同版本 $[1,0]$ 之後, 兩側分別更新為 $[2,0]$, $[1,1]$, 兩者並行, 不能只因第一分量 2 較大就覆蓋另一份. 向量只能辨認並行, 不能替應用選出正確內容; 網路分區後保留分歧也不等於完成 Consensus. 這是該論文的版本管理設計, 不等同宣稱現行 DynamoDB 仍以相同外部介面暴露此機制.
+[Dynamo: Amazon's Highly Available Key-value Store](https://cdn.amazon.science/ac/1d/eb50c4064c538c8ac440ce6a1d91/dynamo-amazons-highly-available-key-value-store.pdf) (2007), §4.4 使用 Vector Clock 追蹤物件版本因果: 可比較時捨棄被涵蓋的舊版本; 無法比較時保留分歧, 由應用進行語義合併. 自製例: 共同版本 $[1,0]$ 之後, 兩側分別更新為 $[2,0]$, $[1,1]$, 兩者並行, 不能只因第一分量 2 較大就覆蓋另一份. 向量只能辨認並行, 不能替應用選出正確內容; 網路分區後保留分歧也不等於完成 Consensus. 這是該論文的版本管理設計, 不等同宣稱現行 DynamoDB 仍以相同外部介面暴露此機制.
 
 ## 5. Global State 與 Consistent Cut
 
@@ -221,7 +221,7 @@ sequenceDiagram
 
 ### 5.2 一致與不一致的具體截面
 
-[教學補充/推導] P1 的事件依序為`a=send(m)`, `b=local`; P2 依序為`c=local`, `d=recv(m)`.
+P1 的事件依序為`a=send(m)`, `b=local`; P2 依序為`c=local`, `d=recv(m)`.
 
 ```text
 P1: ---- a:send(m) -------- b:local -------->
@@ -318,7 +318,7 @@ flowchart TD
 
 ### 6.4 正確性的核心理由
 
-[教學補充/推導] 對任一 channel $P_i$→$P_j$, 考慮訊息 m:
+對任一 channel $P_i$→$P_j$, 考慮訊息 m:
 
 - 若 send(m) 在 $P_i$ 記錄前, Marker 排在 m 後. 若 $P_j$ 在記錄前收到 m, 它已進入 $LS_j$; 若在記錄後收到, 則因 FIFO 必先於 Marker 到達, 會進入 $SC_{ij}$.
 - 若 send(m) 在 $P_i$ 記錄後, Marker 必先於 m 送出, 故 $P_j$ 不會把 m 當成記錄前的訊息: 首次 Marker 會先使它記錄 LS, 或既有錄製已被該 Marker 關閉.
@@ -384,7 +384,7 @@ C1,1 因而是此次已保存歷史中的無用 checkpoint; 未來若只新增�
 
 ### 7.3 Z-Path 的精確條件
 
-[延伸補充] **之字路徑 (Zigzag Path, Z-Path)** 由一串訊息構成: 第一筆在起點 checkpoint 之後送出, 最後一筆在終點 checkpoint 之前收到; 相鄰訊息在中介程序的接收與下一次傳送, 位於同一或後續 checkpoint interval. 若位於同一 interval, 下一次傳送允許早於前一次接收.
+ **之字路徑 (Zigzag Path, Z-Path)** 由一串訊息構成: 第一筆在起點 checkpoint 之後送出, 最後一筆在終點 checkpoint 之前收到; 相鄰訊息在中介程序的接收與下一次傳送, 位於同一或後續 checkpoint interval. 若位於同一 interval, 下一次傳送允許早於前一次接收.
 
 因此 Z-Path 不一定是 Happens-before 路徑. **之字循環 (Zigzag Cycle, Z-Cycle)** 從一個 checkpoint 出發又回到自己, 表示它無法延伸為一組一致的全域 checkpoint.
 
@@ -420,7 +420,7 @@ flowchart LR
 
 P40 是另一個時間軸: P1 在 C1,2 之後送出 mx, P2 在 C2,2 之前收到; P1 crash 後只能還原到 C1,2, send(mx) 遺失. P2 若保留 C2,2 就成為 orphan, 因此回到 C2,1. 圖中 P3 選 C3,2; 沒有畫出其他訊息依賴, 不能憑空要求 P3 也回到 C3,1.
 
-[教學補充/推導] 以下補一個會一路回到初始狀態的 **骨牌效應 (Domino Effect)** 完整例子:
+以下補一個會一路回到初始狀態的 **骨牌效應 (Domino Effect)** 完整例子:
 
 ```text
 P: C_P,0 -- send(a) -- recv(b) -- C_P,1 -- send(c) -- CRASH
@@ -436,7 +436,7 @@ Q: C_Q,0 -- recv(a) -- send(b) -- recv(c) -- C_Q,1
 
 ### 7.6 回復選擇的通用檢查方法
 
-[教學補充/推導] 在只有回滾, 保存有限 checkpoints, 未使用 Message Logging 的簡化模型中:
+在只有回滾, 保存有限 checkpoints, 未使用 Message Logging 的簡化模型中:
 
 ```text
 S := 每個程序目前允許選擇的最新可用 checkpoint
@@ -469,7 +469,7 @@ Message Logging 不只是把訊息 payload 寫檔. 若程序會讀取隨機數, 
 
 ### 8.1 實際系統: Flink 的 Barrier 與重播
 
-[官方文件/延伸補充] [Apache Flink 2.1 Stateful Stream Processing](https://nightlies.apache.org/flink/flink-docs-release-2.1/docs/concepts/stateful-stream-processing/) 以分散式快照與來源重播支援回復. Source 將 checkpoint barrier 插入串流, Operator 依 barrier 界定狀態; aligned checkpoint 在多輸入間對齊邊界, unaligned checkpoint 則記錄在途資料, 以降低背壓時等待 barrier 的成本. 它借用 Chandy–Lamport 的一致邊界思想, 但配合 dataflow 與可重播來源設計, 不能直接把所有模式當成第 6 節的原始 Marker 協定.
+[Apache Flink 2.1 Stateful Stream Processing](https://nightlies.apache.org/flink/flink-docs-release-2.1/docs/concepts/stateful-stream-processing/) 以分散式快照與來源重播支援回復. Source 將 checkpoint barrier 插入串流, Operator 依 barrier 界定狀態; aligned checkpoint 在多輸入間對齊邊界, unaligned checkpoint 則記錄在途資料, 以降低背壓時等待 barrier 的成本. 它借用 Chandy–Lamport 的一致邊界思想, 但配合 dataflow 與可重播來源設計, 不能直接把所有模式當成第 6 節的原始 Marker 協定.
 
 自製情境: 快照記錄來源 offset=100 與累計總額=500, 故障時已處理到 offset=105. 回復先載入這份狀態, 再從快照規定的位置重播後續資料, 而不是只回復總額卻繼續從 106 讀取. 否則 101–105 的效果可能遺失; 若輸出端已對外寫入, 又沒有交易或冪等機制, 重播也可能造成外部重複. 這說明一致快照與端到端輸出語義必須一起設計.
 
@@ -538,7 +538,7 @@ P rolls back to a checkpoint before sending m, while Q's selected checkpoint inc
 
 ## 11. 可重跑的算例檢查
 
-[教學補充/推導] 在 Repository 根目錄執行`python tools/verify-examples.py`, 不需第三方套件. 程式核算 P24/P26 的全部事件, 以事件祖先集合交叉檢查 225 組向量關係, 驗證 P33 金額守恆, 枚舉三程序各三份 checkpoint 的 27 種組合, 並檢查本章的 Domino 回滾順序.
+在 Repository 根目錄執行`python tools/verify-examples.py`, 不需第三方套件. 程式核算 P24/P26 的全部事件, 以事件祖先集合交叉檢查 225 組向量關係, 驗證 P33 金額守恆, 枚舉三程序各三份 checkpoint 的 27 種組合, 並檢查本章的 Domino 回滾順序.
 
 預期輸出包含`PASS: P24/P26 timestamps and 225 event-pair causality checks`, `PASS: P33 conservation; 27 checkpoint combinations; R-Graph; domino trace`, 最後為`All finite example checks passed; this is not a full protocol proof.`. 這是有限算例驗證, 不是 Chandy–Lamport 或回復服務的完整實作測試.
 
@@ -554,12 +554,12 @@ P rolls back to a checkpoint before sending m, while Q's selected checkpoint inc
 
 | 來源層級 | 來源與本章用途 |
 | --- | --- |
-| [課程講義] |`整包.pdf` P18–P40; 逐節頁碼見各節引文, 來源身份見 [教材核對紀錄](../reference/README.md) |
-| [延伸補充: 原文書] | van Steen 與 Tanenbaum, Distributed Systems, 4.03x; §5.2, PDF P276–P287; §8.6, PDF P552–P558. [作者頁](https://www.distributed-systems.net/index.php/books/ds4/) |
-| [原始論文] | Lamport, 1978, [Time, Clocks, and the Ordering of Events in a Distributed System](https://lamport.azurewebsites.net/pubs/time-clocks.pdf): 事件偏序與時鐘條件 |
-| [原始論文] | Chandy 與 Lamport, 1985, [Distributed Snapshots: Determining Global States of Distributed Systems](https://lamport.azurewebsites.net/pubs/chandy.pdf): FIFO Snapshot, Marker 與可達性 |
-| [原始論文] | Netzer 與 Xu, 1993, [Necessary and Sufficient Conditions for Consistent Global Snapshots](https://cs.brown.edu/research/pubs/techreports/reports/93/cs93-32.pdf): Z-Path, Z-Cycle 與可擴充快照條件 |
-| [原始論文/延伸補充] | DeCandia 等, 2007, [Dynamo: Amazon's Highly Available Key-value Store](https://cdn.amazon.science/ac/1d/eb50c4064c538c8ac440ce6a1d91/dynamo-amazons-highly-available-key-value-store.pdf), §4.4: 物件版本因果與語義合併 |
-| [官方文件/延伸補充] | [Apache Flink 2.1 Stateful Stream Processing](https://nightlies.apache.org/flink/flink-docs-release-2.1/docs/concepts/stateful-stream-processing/): barrier, aligned/unaligned checkpoint 與重播 |
+| 課程講義 |`整包.pdf` P18–P40; 逐節頁碼見各節引文, 來源身份見 [教材核對紀錄](../reference/README.md) |
+| 延伸補充: 原文書 | van Steen 與 Tanenbaum, Distributed Systems, 4.03x; §5.2, PDF P276–P287; §8.6, PDF P552–P558. [作者頁](https://www.distributed-systems.net/index.php/books/ds4/) |
+| 原始論文 | Lamport, 1978, [Time, Clocks, and the Ordering of Events in a Distributed System](https://lamport.azurewebsites.net/pubs/time-clocks.pdf): 事件偏序與時鐘條件 |
+| 原始論文 | Chandy 與 Lamport, 1985, [Distributed Snapshots: Determining Global States of Distributed Systems](https://lamport.azurewebsites.net/pubs/chandy.pdf): FIFO Snapshot, Marker 與可達性 |
+| 原始論文 | Netzer 與 Xu, 1993, [Necessary and Sufficient Conditions for Consistent Global Snapshots](https://cs.brown.edu/research/pubs/techreports/reports/93/cs93-32.pdf): Z-Path, Z-Cycle 與可擴充快照條件 |
+| 原始論文 | DeCandia 等, 2007, [Dynamo: Amazon's Highly Available Key-value Store](https://cdn.amazon.science/ac/1d/eb50c4064c538c8ac440ce6a1d91/dynamo-amazons-highly-available-key-value-store.pdf), §4.4: 物件版本因果與語義合併 |
+| 官方文件 | [Apache Flink 2.1 Stateful Stream Processing](https://nightlies.apache.org/flink/flink-docs-release-2.1/docs/concepts/stateful-stream-processing/): barrier, aligned/unaligned checkpoint 與重播 |
 
 線上來源查閱日期: 2026-11-19. 本文的自製圖, Domino 算例與選擇題是教學推導; 不代表部署過任何 checkpoint 服務或真實故障叢集.
