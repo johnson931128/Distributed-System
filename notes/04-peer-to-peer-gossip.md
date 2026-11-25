@@ -307,50 +307,41 @@ API 分層必須清楚: Chord 本身主要提供`lookup(key)` 找節點; block s
 
 ### 5.1 用區域切分交接檔案鍵
 
-用 $[0,1)\times[0,1)$, 半開區間避免邊界同時屬於兩人. 初始四份區域:
+P106 的原圖中, J 是既有 Owner, New 是新加入的節點. 為了計算區域範圍, 假設整個空間為 $[0,1)\times[0,1)$, 將左上、右上、下方三個初始區域分別命名為 J, B, A.
+
+![CAN Node Join: J 將原有區域的右半部交給 New](https://raw.githubusercontent.com/johnson931128/Distributed-System/main/assets/diagrams/ch04-can-node-join.png)
+
+圖 4.4a - 成大分散式系統講義 P106, CAN: Node Joining & Publishing, Node Join Mechanism 原圖裁切.
 
 | Peer | x 範圍 | y 範圍 |
 | --- | --- | --- |
-| A | $[0,0.5)$ | $[0,0.5)$ |
-| B | $[0.5,1)$ | $[0,0.5)$ |
-| C | $[0,0.5)$ | $[0.5,1)$ |
-| D | $[0.5,1)$ | $[0.5,1)$ |
+| J | $[0,0.5)$ | $[0.5,1)$ |
+| B | $[0.5,1)$ | $[0.5,1)$ |
+| A | $[0,1)$ | $[0,0.5)$ |
 
-在 J 加入以前, $\mathrm{hash}(K)=(0.8,0.6)$ 屬於 D. 現在讓 J 加入右上角. 觀察同一個 key 為何要換 owner, 以及既有資料什麼時候才跟上:
+假設 $\mathrm{hash}(K)=(0.3,0.6)$, 加入前 K 由 J 負責. 接著依原圖觀察區域如何切分及資料如何交接:
 
-```text
-y                       x = 0       0.5     0.75      1
-1.0                         +---------+--------+-------+
-                            |    C    |   D    |   J   |
-0.6                         |         |        | * K   |
-0.5                         +---------+--------+-------+
-                            |    A    |        B       |
-0.0                         +---------+----------------+
-```
-
-圖 4.4a - 分裂後的 CAN 座標. 上半部在 x=0.75 新增邊界, K 的 x=0.8 落在 J 一側. 線段只示區域邊界, 通訊可經環繞的鄰居. 自繪, 參考成大講義 P106.
-
-1. 新節點 J 先聯絡 bootstrap peer, 選定加入點 $(0.8,0.7)$.
-2. 請求經 CAN 路由到該點的 owner D; bootstrap 只是入口, 不應成為所有資料的唯一轉送中心.
-3. D 沿 x 切分: 保留 $[0.5,0.75)\times[0.5,1)$, J 接手 $[0.75,1)\times[0.5,1)$.
-4. 更新 D, J 與相鄰 peers 的 routing state, 將落在 J 區域的既有資料交接.
-5. 發布 $(K,V)$, 假設 $\mathrm{hash}(K)=(0.8,0.6)$, 應找到 J, 並由儲存層將資料保存在 J 的責任區域. 之後 get(K) 用同一映射取回.
+1. New 聯絡 bootstrap peer, 隨機選定加入點, 本例假設為 $(0.3,0.7)$.
+2. 透過 CAN 路由找到該座標的 Owner J.
+3. J 沿 x 軸方向切分區域, 保留 $[0,0.25)\times[0.5,1)$; New 接手 $[0.25,0.5)\times[0.5,1)$.
+4. J 將落在 New 區域的既有資料交接給 New, 並更新兩者及相鄰 Peers 的路由資訊. K 的座標沒有改變, 但責任節點從 J 變成 New.
+5. 發布 $(K,V)$ 時, 仍使用 $\mathrm{hash}(K)=(0.3,0.6)$ 進行路由. 現在由 New 儲存資料, 後續 get(K) 也使用相同映射取回.
 
 ```mermaid
 sequenceDiagram
-    participant J as 新 Peer J
+    participant X as New
     participant B as Bootstrap Peer
-    participant D as Owner D
+    participant J as Owner J
     participant N as 相鄰 Peers
-    J->>B: 找加入點 (0.8,0.7)
-    B->>D: 依座標路由
-    D-->>J: 分配新 zone
-    D->>J: 交接新 zone 的 keys
-    D->>N: 更新鄰接資訊
-    J->>N: 宣告新 zone 與 endpoint
+    X->>B: 找加入點 (0.3,0.7)
+    B->>J: 依座標路由
+    J-->>X: 分配右半區域
+    J->>X: 交接新區域的 keys
+    J->>N: 更新鄰接資訊
+    X->>N: 宣告新區域與 endpoint
 ```
 
-圖 4.4 - D 切分區域後交接資料並更新鄰居. 訊息各自到達, 實作要處理重送, 部分交接與版本. 自繪, 參考成大講義 P106.
+圖 4.4 - J 切分區域後交接資料並更新鄰居. 自繪時序圖, 參考成大講義 P106. 實作仍需處理重送, 部分交接與版本.
 
 ### 5.2 路由, 故障與成本
 
@@ -705,7 +696,7 @@ Which assignment of responsibilities matches the original CFS architecture?
 | P90–P94 | Peer 分攤資源, Overlay 選應用層下一站 | 圖 4.1, A→B→C 的 33 ms | 能否分攤來源流量? |
 | P95–P97 | 端點多播, 中央目錄與泛洪 | 圖 4.2, S 的上行與 TTL=1 | 何時可以只聯絡少量節點? |
 | P98–P103 | 隨機抽樣與反熵 | 圖 4.3, 六節點, 單輪期望與 N=10,000 成本 | 如何精確找一個 key? |
-| P104–P106 | 結構化查找與 CAN 區域 | 圖 4.4, J 接手 K | 如何在環上縮短路徑? |
+| P104–P106 | 結構化查找與 CAN 區域 | 圖 4.4, New 接手 K | 如何在環上縮短路徑? |
 | P107–P109 | Chord 後繼, 捷徑, 局部維護 | 圖 4.5–4.6, key42, N15 | 拿到位址後如何讀檔? |
 | P110–P112 | 區塊儲存與可變資料的共識 | 圖 4.7, 三個區塊與 q=2 群體 | 如何看待提供者與副本的獨立性? |
 | P113–P117 | 路由, 完整性, 可用性及信任 | Sybil 控制域與 CID 例 | P118, 副本能承諾哪些讀寫結果? |
@@ -722,4 +713,4 @@ Which assignment of responsibilities matches the original CFS architecture?
 - 原始論文 Douceur, 2002, [The Sybil Attack](https://www.microsoft.com/en-us/research/wp-content/uploads/2002/01/IPTPS2002.pdf): 多個身份不等於多個獨立實體.
 - 官方文件 [IPFS CIDs](https://docs.ipfs.tech/concepts/content-addressing/), [Pin files](https://docs.ipfs.tech/how-to/pin-files/): 內容驗證與保存責任.
 
-本文數值表, CAN 分裂, Chord 路徑與英文題均為自製或明確沿用講義設定; 圖為原創 Mermaid.`python tools/verify-coordination-p2p.py` 可核算有限案例; 未部署真實 CAN/Chord/Gossip 網路, 也未以模擬通過宣稱所有 churn 排程或真實效能已驗證.
+本文數值表, CAN 分裂, Chord 路徑與英文題均為自製或明確沿用講義設定; 圖為原創 Mermaid, CAN 區域切分圖則裁切自講義 P106.`python tools/verify-coordination-p2p.py` 可核算有限案例; 未部署真實 CAN/Chord/Gossip 網路, 也未以模擬通過宣稱所有 churn 排程或真實效能已驗證.

@@ -80,21 +80,22 @@ def verify_gossip():
 
 
 def verify_can():
-    # Half-open rectangles; D is split into D and J at x=.75.
-    before = [("A", 0, .5, 0, .5), ("B", .5, 1, 0, .5),
-              ("C", 0, .5, .5, 1), ("D", .5, 1, .5, 1)]
-    after = before[:-1] + [("D", .5, .75, .5, 1), ("J", .75, 1, .5, 1)]
+    # P106: owner J splits its upper-left zone at x=.25.
+    before = [("A", 0, 1, 0, .5), ("B", .5, 1, .5, 1),
+              ("J", 0, .5, .5, 1)]
+    after = before[:-1] + [("J", 0, .25, .5, 1), ("New", .25, .5, .5, 1)]
 
     def owners(zones, point):
         x, y = point
         return [name for name, lo, hi, bottom, top in zones if lo <= x < hi and bottom <= y < top]
 
-    assert owners(before, (.8, .6)) == ["D"]
-    assert owners(after, (.8, .6)) == ["J"]
+    assert owners(before, (.3, .6)) == ["J"]
+    assert owners(after, (.3, .6)) == ["New"]
     assert sum((hi - lo) * (top - bottom) for _, lo, hi, bottom, top in after) == 1
     for point in product([i / 20 for i in range(20)], repeat=2):
         assert len(owners(after, point)) == 1
-    assert owners(after, (.75, .5)) == ["J"]
+    assert owners(after, (.25, .5)) == ["New"]
+    assert owners(after, (.2, .7)) == ["J"]
     print("PASS: CAN split, area conservation and 400 coordinate ownership checks")
 
 
