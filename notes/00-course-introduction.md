@@ -2,26 +2,18 @@
 
 ## 1. 一個庫存數字為何需要多台電腦?
 
-> 課程依據: P3–P5.
+商店剩下最後一件商品. 兩筆訂單都送到同一台機器時, 服務可以依序處理. 第一筆買走商品, 第二筆便看到庫存為 0. 如果加一台機器接手故障, 兩台都可能在同一時間看到庫存為 1. 這時得先約定誰能扣庫存, 以及收到哪些回覆才能告知客戶下單成功.
 
-商店剩下最後一件商品. 若所有訂單都到同一台機器, 它只要在本地依次檢查庫存, 第一筆成功, 第二筆便看到零. 現在希望機器壞掉時還有人能接單, 於是把庫存複製到另一台. 兩台都看見庫存 1 時, 可以各自扣款嗎? 如果它們必須先通訊, 一個請求又該等到什麼時候才算完成?
-
-由不同電腦上的元件透過網路互相傳送訊息, 協調共同服務, 就是分散式系統 (Distributed System). 副本 (Replica) 讓服務有機會在個別機器故障後繼續運作. 平行運算則把原本集中在單機的工作分散給多台. 兩個目標都使訊息的送達, 先後與等待成本變成設計問題.
-
-P3 從 Client–Server, P2P, Cloud Computing 到 Decentralized Ledgers 說明系統演進, 並列出 MapReduce, HBase/Cassandra, Kafka, Blockchain 等應用. 這些系統共用許多原理, 卻不採用完全相同的故障模型, 資料介面或一致性保證.
-
-P4–P5 的課程定位是先建立理論, 再觀察實務系統如何實現機制; 不以逐行拆解所有專案原始碼為目標. 分析一個系統時, 應先問問題與保證, 再對照架構, 最後才談個別 API.
+**分散式系統 (Distributed System)** 由多台透過網路連接的電腦組成, 各元件互傳訊息以協調工作. 把狀態複製給其他機器, 是為了一台壞掉時還有副本 (Replica) 可以接手. 把運算拆給多台機器, 則是為了同時處理更多工作. 例如 MapReduce 把大批資料分給多台機器運算, 資料庫則可把同一筆資料存到多處. 兩種設計都要面對訊息多久會到, 以什麼順序到, 以及沒有收到回覆時該怎麼辦.
 
 ## 2. 用一個訂單服務看取捨
 
-> 補充依據: P3–P6 的原理與系統對照, 自製假設情境; 不是講義原例或實測產品.
+沿用只剩一件商品的例子. 用戶端 (Client) 把訂單送給 A. 這個方案用複寫 (Replication) 保留 "嘗試扣一件庫存" 這道命令. 副本依共同順序執行, 都會讓排在第一筆的訂單買到商品.
 
-假設用戶端 (Client) 把訂單送給 A, 庫存只剩 1 件, A 可以向其他副本協調. 複寫 (Replication) 在此保存的是"嘗試扣一件"這道命令, 這樣每個副本都能用同一套庫存規則執行. 先假設副本都能正常通訊:
-
-1. Client 產生唯一`request_id=r1`, 送到 A.
+1. Client 產生唯一 `request_id=r1`, 送到 A.
 2. A 檢查請求, 協調命令順序, 將"嘗試扣一件庫存"寫入複寫流程.
-3. 達到該協定規定的提交條件後, 狀態機按順序執行; 庫存 $1\to0$.
-4. A 在應用狀態保存 r1 的結果, 再回覆成功. 落後的副本按協定追上相同命令與狀態.
+3. 命令達到協定的提交條件後, A 才按順序執行, 把庫存從 1 扣到 0.
+4. 庫存和 `r1` 的結果一併寫入應用狀態, A 再回覆成功. 落後副本依序補上相同命令, 也就得到相同的結果.
 
 ```mermaid
 sequenceDiagram
@@ -35,15 +27,13 @@ sequenceDiagram
     A-->>C: 成功
 ```
 
-圖 0.1 - 一筆訂單從進入複寫群體到執行並回覆. 圖把群體內部協調合在一欄, 多數與持久保存條件留到 Chapter 02. 自繪, 參考成大講義 P3–P6 與 MIT 6.5840 Lecture 6.
+圖 0.1 - 一筆訂單從進入複寫群體到執行並回覆. 圖把群體內部協調合在一欄, 多數與持久保存條件留到 Chapter 02 (成大講義 P3–P6 與 MIT 6.5840 Lecture 6).
 
 ### 2.1 回覆遺失與部分故障
 
-把正常路徑改一個地方. 步驟 4 的成功回覆遺失時, A 已將庫存減到 0, Client 看到的卻只是逾時 (Timeout). 用新 ID 下單會被服務視為另一筆操作, 有重複執行的風險. 用相同 r1 重試, 接手副本從共同狀態找到並回傳 r1 的原結果, 庫存仍為 0. 這叫請求去重 (Request Deduplication). 前提是結果和庫存更新一同受到複寫與回復的保護.
+如果成功回覆在路上遺失, A 已扣完庫存, Client 只看得到逾時 (Timeout). 以相同的 `r1` 重試時, 已追上這筆命令的副本會回傳原本的成功結果. 這叫請求去重 (Request Deduplication). 庫存變更和去重紀錄要一起複寫與回復, 否則接手副本可能找不到舊結果, 把同一筆請求當成新訂單.
 
-若 A 與 B 失聯, 兩台仍各自運作, 這是部分故障 (Partial Failure). 若兩邊都把最後一件商品賣掉, 連線恢復後已發出的成功回覆也無法收回. 讓無法協調的一側暫停寫入, 可以保護只賣一次的要求, 代價是有些請求暫時得不到結果. 這對應兩個問題: 一致性 (Consistency) 約束使用者能看到什麼結果, 可用性 (Availability) 關心故障時服務能否繼續回答.
-
-若 A 扣款後, B 入帳前各拍一張備份, 可能少算在途款項; 恢復時又可能收到沒有對應傳送紀錄的訊息. Chapter 01 的 Consistent Cut 與 Snapshot 正是處理這種全域狀態問題.
+A 與 B 失聯時, 兩台可能都還能接請求. 這是部分故障 (Partial Failure). 如果兩邊各自賣出最後一件商品, 網路修好後也無法收回已交付的成功結果. 一致性 (Consistency) 在此要求只讓一筆訂單成功. 要守住這項承諾, 無法取得寫入權限的一側得暫停接單, 因而犧牲這一側的可用性 (Availability).
 
 ### 2.2 架構比較
 
@@ -58,51 +48,42 @@ sequenceDiagram
 
 ## 3. 課程各單元的原理連結
 
-> 課程依據: P6, P16–P17. 以下以主題整理, 不以 P6 的週次取代正式課表.
+- [01 邏輯時鐘與全域狀態](01-logical-clocks-checkpointing.md) 從跨機訊息找出事件先後. 轉帳已扣款但尚未入帳時, 快照還得把在途的款項一起記下.
+- [02 容錯與共識](02-fault-tolerance-paxos-raft.md) 處理並行訂單該先執行哪一筆. 共識 (Consensus) 決定每個日誌位置的命令, 副本再依序執行.
+- [03 ZooKeeper](03-zookeeper.md) 用共同的更新順序維護設定, 成員名單與排隊狀態. 全序廣播 (Total Order Broadcast) 關心參與者是否以同樣的順序交付更新.
+- [04 對等網路與 Gossip](04-peer-to-peer-gossip.md) 回答大型網路的兩個問題. 要找指定檔案, 可以用分散式雜湊表定位. 要傳播更新, 則可讓對等節點分攤通知工作.
 
-先從節點 A, B 各自留下的訂單紀錄開始. 邏輯時間 (Logical Time) 讓讀者追蹤從傳送到接收的因果順序. 快照與回復 (Snapshot and Recovery) 進一步追問, 哪些局部備份能一起使用. 這是 [Chapter 01](01-logical-clocks-checkpointing.md).
+後續的一致性模型 (Consistency Model) 會接著問, 即使找到了存資料的節點, 它回傳的版本是否符合讀寫承諾. 同樣的問題也會出現在 HBase, Kafka 與區塊鏈中, 各系統採用的機制和保證各有前提.
 
-如果服務要在兩個並行請求間主動決定先後, 就進入 [Chapter 02 的共識](02-fault-tolerance-paxos-raft.md). 共識 (Consensus) 讓副本選定相同命令, 多數決的交集保護跨輪次的資訊. 把共同決定按位置寫進附加式日誌 (Append-Only Log) 後, 副本可順序套用與重播; 全序廣播 (Total Order Broadcast) 關心接收各方是否依同一順序交付訊息. [Chapter 03 的 ZooKeeper](03-zookeeper.md) 會把這些共同狀態做成應用可操作的設定, 成員名單與排隊機制.
+## 4. 課程安排與評分
 
-若情境是由大量節點分攤檔案, 就得先找到誰存有資料. [Chapter 04](04-peer-to-peer-gossip.md) 由 P2P 路由, Gossip 和分散式雜湊表建立定位與傳播機制. 找到資料位置以後, 又會碰到一致性模型 (Consistency Models) 與多版本併行控制 (Multi-Version Concurrency Control, MVCC), 例如 Client 能看到哪個版本, 何時能按特定版本讀取. P6 的課程原理在後續的資料庫, Kafka, 運算與區塊鏈系統中會再次出現, 各自的保證仍要看協定細節.
-
-P6 是原理對應表, 不表示同一列的系統都實作相同協定. 例如 Kafka ISR 不應直接視為 Basic Paxos 的 Acceptor Quorum, ZAB 也不等於 Basic Paxos. 後續章節要重新讀各自講義與官方文件.
-
-## 4. 課程安排與評分: 忠實保留暫定性
-
-> 課程依據: P1–P2, P7–P17. 本節只記錄 PDF 上的課程政策; 不是即時課務公告.
-
-課程為 National Cheng Kung University, Prof. Hung-Chang Hsiao (蕭宏章), Fall 2026. P2 寫週五 09:00–12:00, 以連續 150 分鐘授課區段進行, 並允許彈性個人移動; 助教 TBA, 沒有指定必備教科書. 時段與實際授課區段照原頁記錄, 不自行補出休息規則.
+成大 2026 年秋季分散式系統課程由蕭宏章 (Hung-Chang Hsiao) 教授授課. 課表時段為週五 09:00–12:00, 講義列連續授課區段為 150 分鐘, 並未指定必備教科書. 下列評分與課表為開學講義的暫定安排.
 
 ### 4.1 評分與試題形式
 
-| 項目 | P7 的比例與規則 |
+| 項目 | 比例與規則 |
 | --- | --- |
 | Written Examination | 70%; Week 13, 20 題單選 |
 | Student Presentation | 20%; 小組專題或文獻報告 |
 | Attendance | 10%; 每次點名 1%, 最多 10% |
 
-P10 補充考試為全英文單選. P8–P10 的示例分別測 Marker 邊界, ZooKeeper 避免 Thundering Herd 的前驅觀察策略, Paxos 歷史值採用, 依次對應 Chapter 01, 03, 02.
-
-**P15 明確說明以上政策, 評分與週次均為暫定, 可能依實際教學調整.** 本地 PDF 不證明目前實際課務仍未修改.
+筆試為全英文單選. 三個示例分別問快照的 Marker 如何畫出通道邊界, ZooKeeper 的鎖為何監看前一位, 以及 Paxos 何時必須沿用舊值.
 
 ### 4.2 小組報告與主題
 
-P11: 全班 12 組, 每組約 5 人; 每組 25 分鐘, 含 18 分鐘報告, 5 分鐘 Q&A, 2 分鐘換場. 上台主講限一人, 其餘組員可參與 Q&A. 題目先選先得. 評分看機制能否對應理論, 架構與時間控制; 微型叢集類另看展示流暢度與容錯驗證.
+全班 12 組, 每組約 5 人. 每組有 25 分鐘, 分為 18 分鐘報告, 5 分鐘問答和 2 分鐘換場. 由一人主講, 其他組員可答詢. 題目採先選先得. 評分看是否能用課堂理論解釋系統機制, 報告結構和時間控制. 微型叢集展演另評估操作流暢度與故障情境驗證.
 
-| 分類 | P12–P13 的四個方向 |
+| 分類 | 報告主題 |
 | --- | --- |
 | Paper Review | Google Spanner, Raft, Amazon Dynamo, PBFT |
 | Architecture Analysis | Apache Pulsar vs. Kafka, Redis Cluster, Elasticsearch, TiDB |
 | Mini-Project & Live Demo | ZooKeeper 容錯與選舉, Spark RDD 容錯, HDFS NameNode 高可用性, 分散式鎖與狀態還原 |
 
-P12 對 Raft 報告方向寫"原論文中未提及"的 Membership Change 與日誌壓縮; **技術補充/更精確說法**: 已核對的 [Raft Extended Version](https://raft.github.io/raft.pdf) 實際在 §6, §7 討論這兩者. 因此把它理解為報告深化主題, 不能引用成"Raft 原論文完全沒有這些內容".
+Raft 的兩個報告方向可直接從 [Raft Extended Version](https://raft.github.io/raft.pdf) §6 的成員變更與 §7 的日誌壓縮開始讀.
 
-P14 建議 3–4 節點, 示意為 1 Master 加 2–3 Workers; 每節點至少 2 vCPU, 4 GB RAM, 20 GB Disk. 這是教材建議, 不是各產品的正式最低需求或保證. 該頁另提 GCP 新戶額度與 GitHub Student Developer Pack; 雲端優惠會變動, 本筆記不將其當成已查證的當前方案, 也不以此安排付費資源.
+微型叢集的課堂建議為 3–4 個節點, 每個節點配置 2 vCPU, 4 GB RAM 和 20 GB 磁碟空間. 講義列出 Google Cloud Platform 與 GitHub Student Developer Pack 作為準備展演環境的管道.
 
 ### 4.3 逐週課表
-
-以下依 P16–P17, 日期照投影片列示; 不表示本筆記已完成該週內容.
 
 | Week | 日期 | 主題/安排 |
 | --- | --- | --- |
@@ -125,21 +106,13 @@ P14 建議 3–4 節點, 示意為 1 Master 加 2–3 Workers; 每節點至少 2
 | 17 | 01/01 | Founding Day; No Class |
 | 18 | 01/08 | Flexible Learning; No Class |
 
-P18 deck 封面寫 Week 2, 與上述安排不同; P6 的部分系統週次也不同. 引用筆記時以實體頁碼與標題為定位, 不推測是否由不同版本的課表合併而來.
+講義的週次標示有出入. 後續章節的 P 編號一律指合併講義的實體頁碼.
 
 ## 5. 如何閱讀後續技術筆記?
 
-> 補充依據: P4–P6 的"原理 → 架構 → 應用"目標.
-
-閱讀任何協定時先固定模型: 節點是否只會 crash? 網路是否 FIFO? 哪些資料已可靠落盤? 接著列出角色, 狀態與訊息; 逐步記錄何時某個結果只是被一台接收, 何時已滿足協定決定條件, 何時應用真正執行.
-
-驗證不只看正常路徑. 應把 crash 放在"保存前/保存後""送出前/送出後""多數完成但通知前"等位置, 檢查重試是否仍滿足不變量. 比較方案時, 則指出需要多少控制訊息, 同步儲存與回復工作, 而不是只寫快慢.
-
-下一章從最小的可驗證證據開始. 先把一則跨機訊息的送出與接收畫成箭頭, 問哪些事件必須在它之前發生. 之後再把這個判斷用來檢查故障時留下的狀態.
+先用一筆請求走完正常流程. 寫下誰收到訊息, 哪一刻保存資料, 何時能回覆成功. 然後把故障插在兩個步驟之間, 例如 A 已保存訂單結果卻還沒回覆. 此時換 B 接手, 應能說清楚 B 憑哪一筆紀錄判斷這是重試, 以及還有哪些資料得從其他副本取回.
 
 ## 6. 英文選擇題與逐項解析
-
-以下為自製練習, 不是教授原題.
 
 ### Q1 — Partial failure
 
@@ -163,16 +136,16 @@ Why is copying data to multiple servers insufficient by itself to guarantee a co
 
 **答案: B.** A: 複寫本來可透過訊息. B: 命令順序與故障行為需要協定. C: 有多種複寫與協調方法. D: 時鐘誤差與並行操作不能自動解決應用競爭.
 
-### Q3 — Course policies
+### Q3 — Selling during a partition
 
-How should the grading percentages and weekly schedule in the introduction slides be interpreted?
+Two replicas both report one item in stock, then lose contact with each other. Which policy protects against confirming two sales?
 
-- A. They are permanent guarantees unaffected by later announcements.
-- B. They may be freely replaced with a generic university policy.
-- C. They are the policies recorded in the provided slides and are explicitly tentative.
-- D. Their presence proves that every listed chapter has already been studied.
+- A. Allow either replica to confirm whenever its local stock is nonzero.
+- B. Allow a replica to confirm only after meeting the write protocol's coordination requirement.
+- C. Treat every network timeout as proof that the other replica stopped.
+- D. Merge both successful orders after connectivity returns.
 
-**答案: C.** A: 違反 P15 的暫定聲明. B: 不能以無來源政策替換教材. C: 保留來源與效力界線. D: 課表規劃不等於閱讀進度.
+**答案 B.** A 的本地庫存可能在兩側都還是 1. B 讓無法取得寫入權限的一側先暫停. C 無法從逾時判定遠端是否仍在接單. D 事後合併已來不及撤銷兩份成功回覆.
 
 ### Q4 — Timeout and retry
 
@@ -183,19 +156,19 @@ A client times out after submitting an order. Which design most directly helps p
 - C. Remove all durable records to make the retry faster.
 - D. Reuse a unique request ID and preserve the processed result in the service's state.
 
-**答案: D.** A: 可能重複處理. B: 無法從無回覆推得未執行. C: 破壞恢復與去重資訊. D: 讓服務辨認同一邏輯請求; 仍需可靠保存與正確複寫.
+**答案: D.** A: 可能重複處理. B: 無法從無回覆推得未執行. C: 破壞恢復與去重資訊. D: 讓服務辨認同一邏輯請求. 仍需可靠保存與正確複寫.
 
 ## 7. 參考資料與投影片對應
 
-| 講義 | 主題與原理 | 圖解與推演 | 下一個問題 |
-| --- | --- | --- | --- |
-| P1–P5 | 透過訊息合作與共用資源 | 圖 0.1, 庫存 $1\to0$, 重送 r1 | 如何約束順序及故障行為? |
-| P6 | 因果, 回復, 共識與路由 | 訂單案例和 01–04 的連結 | 如何檢驗一個機制? |
-| P7–P10 | 從機制, 情境與安全性出題 | Marker, 前驅 Watch, 歷史值採用 | 如何在報告中展示? |
-| P11–P17 | 報告, 暫定政策與課表 | 三類主題與週次 | P18, 事件的先後如何比較? |
+| 講義 | 主題 | 算例與圖解 |
+| --- | --- | --- |
+| P1–P5 | 透過訊息合作與共用資源 | 圖 0.1, 庫存 $1\to0$, 重送 r1 |
+| P6 | 因果, 回復, 共識與路由 | 訂單案例和 01–04 的連結 |
+| P7–P10 | 從機制, 情境與安全性出題 | Marker, 前驅 Watch, 歷史值採用 |
+| P11–P17 | 報告, 暫定政策與課表 | 三類主題與週次 |
 
-- 原文書 van Steen, Tanenbaum, 第 4 版, PDF P19–P20, P26–P27, P31–P32, 網路化系統與資源共享, 透明性及介面語義.
+- van Steen 與 Tanenbaum, [Distributed Systems, 第 4 版](https://www.distributed-systems.net/index.php/books/ds4/), PDF P19–P20, P26–P27, P31–P32. 網路化系統, 資源共享與透明性.
 - 大學教材 [MIT 6.5840 Lecture 1 — Introduction](https://pdos.csail.mit.edu/6.824/notes/l01.txt) 的部分故障與設計取捨, 以及 [Lecture 6 — RSM and Raft](https://pdos.csail.mit.edu/6.824/notes/l-raft.txt) 的複寫與回覆路徑.
 - 原始論文 [Raft Extended Version](https://raft.github.io/raft.pdf) §6–§7, 核對 Membership Change 與 Log Compaction.
 
-教材身份, 頁序與版本差異集中在 [教材紀錄](../reference/README.md); 本章課程政策只依提供的 PDF, 未宣稱核對過最新課務公告.
+教材身份, 頁序與版本差異集中在 [教材紀錄](../reference/README.md). 本章課程政策只依提供的 PDF, 未宣稱核對過最新課務公告.
