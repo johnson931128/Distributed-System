@@ -84,7 +84,7 @@ P6 是原理對應表, 不表示同一列的系統都實作相同協定. 例如 
 
 P10 補充考試為全英文單選. P8–P10 的示例分別測 Marker 邊界, ZooKeeper 避免 Thundering Herd 的前驅觀察策略, Paxos 歷史值採用, 依次對應 Chapter 01, 03, 02.
 
-**P15 明確說明以上政策, 評分與週次均為暫定, 可能依實際教學調整. ** 本地 PDF 不證明目前實際課務仍未修改.
+**P15 明確說明以上政策, 評分與週次均為暫定, 可能依實際教學調整.** 本地 PDF 不證明目前實際課務仍未修改.
 
 ### 4.2 小組報告與主題
 
@@ -150,7 +150,7 @@ Which scenario best illustrates partial failure in a distributed system?
 - C. A local variable is renamed without changing behavior.
 - D. Two processes on one host always share the same state.
 
-**答案: A. ** A: 系統仍局部運作, 符合定義. B: 全體同時停止不呈現部分可達的困難. C: 不是故障行為. D: 不是分散式故障模型, 也非一般程序保證.
+**答案: A.** A: 系統仍局部運作, 符合定義. B: 全體同時停止不呈現部分可達的困難. C: 不是故障行為. D: 不是分散式故障模型, 也非一般程序保證.
 
 ### Q2 — Replication
 
@@ -161,7 +161,7 @@ Why is copying data to multiple servers insufficient by itself to guarantee a co
 - C. Every replicated service must use Blockchain.
 - D. Physical clocks automatically determine a unique correct command order.
 
-**答案: B. ** A: 複寫本來可透過訊息. B: 命令順序與故障行為需要協定. C: 有多種複寫與協調方法. D: 時鐘誤差與並行操作不能自動解決應用競爭.
+**答案: B.** A: 複寫本來可透過訊息. B: 命令順序與故障行為需要協定. C: 有多種複寫與協調方法. D: 時鐘誤差與並行操作不能自動解決應用競爭.
 
 ### Q3 — Course policies
 
@@ -172,7 +172,7 @@ How should the grading percentages and weekly schedule in the introduction slide
 - C. They are the policies recorded in the provided slides and are explicitly tentative.
 - D. Their presence proves that every listed chapter has already been studied.
 
-**答案: C. ** A: 違反 P15 的暫定聲明. B: 不能以無來源政策替換教材. C: 保留來源與效力界線. D: 課表規劃不等於閱讀進度.
+**答案: C.** A: 違反 P15 的暫定聲明. B: 不能以無來源政策替換教材. C: 保留來源與效力界線. D: 課表規劃不等於閱讀進度.
 
 ### Q4 — Timeout and retry
 
@@ -183,7 +183,7 @@ A client times out after submitting an order. Which design most directly helps p
 - C. Remove all durable records to make the retry faster.
 - D. Reuse a unique request ID and preserve the processed result in the service's state.
 
-**答案: D. ** A: 可能重複處理. B: 無法從無回覆推得未執行. C: 破壞恢復與去重資訊. D: 讓服務辨認同一邏輯請求; 仍需可靠保存與正確複寫.
+**答案: D.** A: 可能重複處理. B: 無法從無回覆推得未執行. C: 破壞恢復與去重資訊. D: 讓服務辨認同一邏輯請求; 仍需可靠保存與正確複寫.
 
 ## 7. 參考資料與投影片對應
 
