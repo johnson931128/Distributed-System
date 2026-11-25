@@ -2,7 +2,7 @@
 
 ## 1. Worker 要去哪裡找設定和排程者?
 
-> [課程講義] P63–P70: 章節定位, Hadoop 生態系與 ZooKeeper 的位置.
+> 課程依據: P63–P70: 章節定位, Hadoop 生態系與 ZooKeeper 的位置.
 
 兩台工作節點 (Worker) 重啟後要繼續處理同一批檔案. 它們可以從檔案系統找回輸入, 但還得知道排程者是誰, 每台能同時跑幾個工作, 以及誰有權發布結果. 如果各自把這些資訊留在記憶體, 一台重啟就可能回到舊版設定, 兩個排程者也可能同時將工作交給不同人.
 
@@ -22,7 +22,7 @@ flowchart LR
 
 ## 2. Ensemble 架構, 讀寫路徑與 Wait-free
 
-> [課程講義] P71–P74. 延伸: [Hunt 等, ZooKeeper: Wait-free coordination for Internet-scale systems](https://www.usenix.org/events/atc10/tech/full_papers/Hunt.pdf), §2–§3.
+> 課程依據: P71–P74. 延伸: [Hunt 等, ZooKeeper: Wait-free coordination for Internet-scale systems](https://www.usenix.org/events/atc10/tech/full_papers/Hunt.pdf), §2–§3.
 
 **伺服器群體 (Ensemble)** 共同維護資料樹. Client 通常連接一台伺服器, 並由 client library 管理重新連線. 一般讀取由連線端的本地副本處理; 更新則經過 Leader 排序, 複寫與提交.
 
@@ -40,7 +40,7 @@ P71–P72 的讀寫比例, microsecond latency, P88 的讀取吞吐成長描述,
 
 ## 3. 多數 Quorum 與 ZAB: 從寫入到提交
 
-> [課程講義] P75–P79. 延伸: [ZooKeeper 3.9.4 Internals](https://zookeeper.apache.org/doc/r3.9.4/zookeeperInternals.html), Atomic Broadcast, Leader Activation, Quorums.
+> 課程依據: P75–P79. 延伸: [ZooKeeper 3.9.4 Internals](https://zookeeper.apache.org/doc/r3.9.4/zookeeperInternals.html), Atomic Broadcast, Leader Activation, Quorums.
 
 ### 3.1 寫入至少要經過哪些伺服器?
 
@@ -60,7 +60,7 @@ Leader activation 的目標是先建立可延續既有決定的合法歷史, 再
 
 ### 3.3 三節點正常路徑: 更新設定
 
-[教學補充/推導] 固定投票者 L, F1, F2, q=2, epoch=7 已啟用, 皆已套用至`(7,40)`. Client 連到 F1, 要更新`/app/config`.
+固定投票者 L, F1, F2, q=2, epoch=7 已啟用, 皆已套用至`(7,40)`. Client 連到 F1, 要更新`/app/config`.
 
 ```mermaid
 sequenceDiagram
@@ -87,7 +87,7 @@ sequenceDiagram
 
 ### 3.4 Leader 故障: 恢復先於新寫入
 
-[教學補充/推導] 三台已提交至`(7,40)`; L, F1 有此前綴, F2 尚落後至`(7,39)`. L 另把`(7,41)` 只記在自己, 未複寫成多數, 隨後 crash.
+三台已提交至`(7,40)`; L, F1 有此前綴, F2 尚落後至`(7,39)`. L 另把`(7,41)` 只記在自己, 未複寫成多數, 隨後 crash.
 
 1. F1, F2 偵測失聯並進入恢復. 這是懷疑, 不是 timeout 對 crash 的形式證明.
 2. 選舉與 activation 必須採取保留已提交`(7,40)` 的歷史; 本例由有該歷史的 F1 擔任新 Leader.
@@ -109,7 +109,7 @@ P77 的"Simplified Two-Phase Commit"是 proposal/ACK/commit 的教學類比, 不
 
 ## 4. Znode 資料模型與條件更新
 
-> [課程講義] P80–P81. 延伸: [ZooKeeper 3.9.4 Programmer's Guide](https://zookeeper.apache.org/doc/r3.9.4/zookeeperProgrammers.html), Data Model, Sessions, Stat Structure.
+> 課程依據: P80–P81. 延伸: [ZooKeeper 3.9.4 Programmer's Guide](https://zookeeper.apache.org/doc/r3.9.4/zookeeperProgrammers.html), Data Model, Sessions, Stat Structure.
 
 **資料節點 (Znode)** 同時可有小型資料與子節點, 位置以 path 命名, 例如`/app/config` 與`/app/workers/w1`. 它不是供任意大型檔案讀寫的一般檔案系統; 沒有因為使用路徑就自動取得資料庫交易或 POSIX 檔案語義.
 
@@ -121,7 +121,7 @@ P77 的"Simplified Two-Phase Commit"是 proposal/ACK/commit 的教學類比, 不
 
 ### 4.2 實際數值: 避免更新遺失 (Lost Update)
 
-[教學補充/推導] A, B 都讀到`/config` 的`data={limit:10}, version=4`.
+A, B 都讀到`/config` 的`data={limit:10}, version=4`.
 
 1. A 計算新資料`{limit:11}`, 送`setData(...,version=4)`, 成功後資料 version=5.
 2. B 仍依舊內容計算`{limit:12}`, 也以 expectedVersion=4 寫入.
@@ -141,7 +141,7 @@ P77 的"Simplified Two-Phase Commit"是 proposal/ACK/commit 的教學類比, 不
 
 ## 5. Session, 斷線與 Ephemeral 的時間軸
 
-> [課程講義] P81, P87. 技術補充: Programmer's Guide 的 ZooKeeper Sessions.
+> 課程依據: P81, P87. 技術補充: Programmer's Guide 的 ZooKeeper Sessions.
 
 **工作階段 (Session)** 跨越 Client 與伺服器的單次 TCP 連線. Client 可重新連到其他伺服器, 並在有效期間內繼續原 Session; ensemble 依協商的 Session timeout 與活動判斷是否到期.
 
@@ -171,7 +171,7 @@ P87 寫 Ephemeral 綁定 TCP session, 作為直覺可理解; 實作時應修正�
 
 ## 6. Watch: 狀態失效通知, 而非完整變更串流
 
-> [課程講義] P74, P82. 延伸: Programmer's Guide 的 Watches; 以下核心 recipe 使用標準 one-shot Watch.
+> 課程依據: P74, P82. 延伸: Programmer's Guide 的 Watches; 以下核心 recipe 使用標準 one-shot Watch.
 
 **監看通知 (Watch)** 讓 Client 在讀取時註冊變動通知. 標準 Watch 觸發一次後, 若仍需追蹤, 必須再次註冊; 3.9.4 也有 Persistent/Recursive Watch, 不能把它們與本章標準模式混為一談.
 
@@ -194,7 +194,7 @@ Watch callback 也不宜執行長時間工作而堵住事件派送; 應交給工
 
 ## 7. Configuration 與 Group Membership 完整案例
 
-> [課程講義] P82. 延伸: Hunt 等 §2.4.
+> 課程依據: P82. 延伸: Hunt 等 §2.4.
 
 ### 7.1 Configuration Management
 
@@ -210,7 +210,7 @@ W1 用 Session S1 建立`/app/workers/w1`, 資料為 endpoint; W2 用 S2 建 w2.
 
 ## 8. Distributed Lock: 排隊, 競爭與恢復
 
-> [課程講義] P83–P87. 延伸: [ZooKeeper 3.9.4 Recipes: Locks](https://zookeeper.apache.org/doc/r3.9.4/recipes.html), Hunt 等 §2.4.
+> 課程依據: P83–P87. 延伸: [ZooKeeper 3.9.4 Recipes: Locks](https://zookeeper.apache.org/doc/r3.9.4/recipes.html), Hunt 等 §2.4.
 
 **分散式鎖 (Distributed Lock)** 的直接目標是讓遵循同一 recipe 的有效 Client 按協定排隊; 被保護的外部資源是否能拒絕過期持有者, 還需第 8.4 節的約束.
 
@@ -296,7 +296,7 @@ sequenceDiagram
 
 ### 8.4 外部資源的 stale holder 與 Fencing
 
-[教學補充/推導] 假設 C1 已持鎖, 但與 ZooKeeper 隔離; 它仍能連到資料庫. Session 到期後 C2 取得新鎖, C1 卻因長暫停恢復而繼續送舊寫入. Ephemeral 清理不能撤回另一條網路連線已送出的請求.
+假設 C1 已持鎖, 但與 ZooKeeper 隔離; 它仍能連到資料庫. Session 到期後 C2 取得新鎖, C1 卻因長暫停恢復而繼續送舊寫入. Ephemeral 清理不能撤回另一條網路連線已送出的請求.
 
 可在應用設計 **隔離代碼 (Fencing Token)**: 每次授權給出嚴格遞增的 generation, 外部儲存與更新原子地保存已接受最大值. 例: C1 的 41, C2 的 42; 儲存端先接受 42 後, 對 41 的延遲操作回拒絕.
 
@@ -312,7 +312,7 @@ atomic external_write(token, operation):
 
 ## 9. Consistency, sync() 與教材簡化
 
-> [課程講義] P74, P88. 技術補充: ZooKeeper 3.9.4 Internals 的 Consistency Guarantees; 查詢日期 2026-11-20.
+> 課程依據: P74, P88. 技術補充: ZooKeeper 3.9.4 Internals 的 Consistency Guarantees; 查詢日期 2026-11-20.
 
 **線性一致性 (Linearizability)** 要求操作可視為在呼叫與回覆間的一個瞬間生效, 並保留真實時間先後. ZooKeeper 的更新提供強順序, 但本地讀取可能落後; **Client FIFO Order** 也不是不同 Client 間共享一個最新觀測點.
 
@@ -402,12 +402,12 @@ An expired client can still reach the external storage. What most directly helps
 
 延伸來源 (ZooKeeper 文件及論文 2026-11-20, MIT 2026-11-22):
 
-- [大學教材] [MIT 6.5840 Lecture 9 — ZooKeeper](https://pdos.csail.mit.edu/6.824/notes/l-zookeeper.txt), 協調器與資料儲存分工, 以及讀取, 版本和通知的使用方式.
+- 大學教材 [MIT 6.5840 Lecture 9 — ZooKeeper](https://pdos.csail.mit.edu/6.824/notes/l-zookeeper.txt), 協調器與資料儲存分工, 以及讀取, 版本和通知的使用方式.
 
-- [原始論文] Hunt, Konar, Junqueira, Reed, 2010, [ZooKeeper: Wait-free coordination for Internet-scale systems](https://www.usenix.org/events/atc10/tech/full_papers/Hunt.pdf), §2 的模型, Session 與 recipes; §3 的實作分工. 課堂簡化與現行文件有差異時分別註明.
-- [官方文件] [ZooKeeper 3.9.4 Programmer's Guide](https://zookeeper.apache.org/doc/r3.9.4/zookeeperProgrammers.html): Znode, version, Session, Watch 與一致性.
-- [官方文件] [ZooKeeper 3.9.4 Recipes](https://zookeeper.apache.org/doc/r3.9.4/recipes.html): Lock recipe, 前驅 Watch, 未知 create 結果的 GUID 處理.
-- [官方文件] [ZooKeeper 3.9.4 Internals](https://zookeeper.apache.org/doc/r3.9.4/zookeeperInternals.html): ZAB, quorum, zxid, sync 的限制.
-- [教學補充/推導] 數值 CAS, ZAB 交錯, Session 表, fencing 與英文題皆為自製. 圖表為原創 Mermaid; 沒有外部圖片授權需求.
+- 原始論文 Hunt, Konar, Junqueira, Reed, 2010, [ZooKeeper: Wait-free coordination for Internet-scale systems](https://www.usenix.org/events/atc10/tech/full_papers/Hunt.pdf), §2 的模型, Session 與 recipes; §3 的實作分工. 課堂簡化與現行文件有差異時分別註明.
+- 官方文件 [ZooKeeper 3.9.4 Programmer's Guide](https://zookeeper.apache.org/doc/r3.9.4/zookeeperProgrammers.html): Znode, version, Session, Watch 與一致性.
+- 官方文件 [ZooKeeper 3.9.4 Recipes](https://zookeeper.apache.org/doc/r3.9.4/recipes.html): Lock recipe, 前驅 Watch, 未知 create 結果的 GUID 處理.
+- 官方文件 [ZooKeeper 3.9.4 Internals](https://zookeeper.apache.org/doc/r3.9.4/zookeeperInternals.html): ZAB, quorum, zxid, sync 的限制.
+- 數值 CAS, ZAB 交錯, Session 表, fencing 與英文題皆為自製. 圖表為原創 Mermaid; 沒有外部圖片授權需求.
 
 有限案例的程式核算見`python tools/verify-coordination-p2p.py`. 本文未部署 ZooKeeper 叢集, 未測量吞吐, 也未執行真實 Session Expiration/故障注入; 範例驗證與平台渲染驗收分開記錄.
