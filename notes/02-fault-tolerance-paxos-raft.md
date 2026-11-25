@@ -65,19 +65,19 @@ P49 的 A 提 0、B 提 1、等待 C 是直覺示意，不是 FLP 的形式證�
 
 > 課程依據：P50、P52–P53；推導為教學補充。延伸：原文書 §8.2.4；[Paxos Made Simple](https://lamport.azurewebsites.net/pubs/paxos-simple.pdf)，§2。
 
-**多數法定人數（Majority Quorum）** 只計算 Acceptor。固定共有 N 個 Acceptor，quorum 大小 `q = ⌊N/2⌋ + 1`。
+**多數法定人數（Majority Quorum）** 只計算 Acceptor。固定共有 N 個 Acceptor，quorum 大小 $q=\left\lfloor\frac{N}{2}\right\rfloor+1$。
 
-| N | q | 為進展最多可不可達的個數 N−q |
+| N | q | 為進展最多可不可達的個數 $N-q$ |
 | --- | --- | --- |
 | 3 | 2 | 1 |
 | 4 | 3 | 1 |
 | 5 | 3 | 2 |
 
-兩個多數集合 Q1、Q2 必相交，因為 `|Q1 ∩ Q2| ≥ |Q1|+|Q2|−N ≥ 2q−N > 0`。N=5 時，`{A1,A2,A3}` 與 `{A3,A4,A5}` 交於 A3。
+兩個多數集合 Q1、Q2 必相交，因為 $\lvert Q_1\cap Q_2\rvert\ge \lvert Q_1\rvert+\lvert Q_2\rvert-N\ge 2q-N>0$。$N=5$ 時，$\{A_1,A_2,A_3\}$ 與 $\{A_3,A_4,A_5\}$ 交於 A3。
 
 相交提供跨回合傳遞歷史的節點，但若 A3 不記得接受過什麼，或新 Proposer 忽略歷史，就仍可能改選不同值。Safety 還需要 Promise、持久 Accepted 狀態與 Value Adoption 規則。
 
-對 `N=2f+1` 的固定成員 Crash 模型，多數可容許 f 個不可達者而繼續工作，但前提仍含訊息與協調者的進展條件。超過 f 個不可達不代表既有決定自動變錯，只是通常不能再取得 quorum。若為了恢復可用性任意縮小配置，可能讓兩個不相交群體各自提交，破壞保證。
+對 $N=2f+1$ 的固定成員 Crash 模型，多數可容許 f 個不可達者而繼續工作，但前提仍含訊息與協調者的進展條件。超過 f 個不可達不代表既有決定自動變錯，只是通常不能再取得 quorum。若為了恢復可用性任意縮小配置，可能讓兩個不相交群體各自提交，破壞保證。
 
 ## 5. Paxos 的角色、狀態與術語
 
@@ -91,10 +91,10 @@ P49 的 A 提 0、B 提 1、等待 C 是直覺示意，不是 FLP 的形式證�
 
 | 名稱 | 意義 | 不能推論 |
 | --- | --- | --- |
-| Proposed | 某值被提出，或某個 `(n,v)` 已進入提議流程 | 任何 Acceptor 已接受 |
-| Promise(n) | 該 Acceptor 不再接受 `<n` 的提案 | 已接受 n 的值，或 n 將必然成功 |
+| Proposed | 某值被提出，或某個 $(n,v)$ 已進入提議流程 | 任何 Acceptor 已接受 |
+| Promise(n) | 該 Acceptor 不再接受 $<n$ 的提案 | 已接受 n 的值，或 n 將必然成功 |
 | Accepted(n,v) | 一個 Acceptor 已持久接受該對 | 多數已接受 |
-| Chosen | 同一 instance 的同一 `(n,v)` 被多數接受 | 所有節點已收到通知 |
+| Chosen | 同一 instance 的同一 $(n,v)$ 被多數接受 | 所有節點已收到通知 |
 | Learned | 某 Learner 已確認該值 Chosen | 所有 Learner 都知道、應用已執行 |
 | Applied | 已按應用順序執行至狀態機 | Client 必定收到回覆或外部副作用自動去重 |
 
@@ -110,7 +110,7 @@ accepted_n = None           # 最高已接受提案的編號
 accepted_v = None           # 對應的值；None 在此表示尚無記錄
 ```
 
-三者不能合成一個「目前提案」。例如 `promised_n=20, accepted_n=12, accepted_v=Y` 合法：它答應未來拒絕 `<20`，但過去確實接受過 `(12,Y)`。新 Promise 不能抹除舊 Accepted。
+三者不能合成一個「目前提案」。例如 `promised_n=20, accepted_n=12, accepted_v=Y` 合法：它答應未來拒絕 $<20$，但過去確實接受過 $(12,Y)$。新 Promise 不能抹除舊 Accepted。
 
 **提案編號（Proposal Number，也稱 Ballot）** 是全域唯一且可排序的編號，常實作為 `(counter, proposer_id)` 字典序。每個 Proposer 要能選出比已知高編號更大的新編號，重啟也不得將同一編號用於不同值。本文用 10、12、20 表示已確保唯一的編號，不靠實體時間正確同步。
 
@@ -118,7 +118,7 @@ accepted_v = None           # 對應的值；None 在此表示尚無記錄
 
 ## 6. Happy Path：Prepare(10) 到 Applied
 
-> 課程依據：P58 的 `(10,A)` 原例；本節補上狀態表與 Learner 通知。固定三個 Acceptor，q=2，皆初始無記錄。
+> 課程依據：P58 的 $(10,A)$ 原例；本節補上狀態表與 Learner 通知。固定三個 Acceptor，$q=2$，皆初始無記錄。
 
 ```mermaid
 sequenceDiagram
@@ -145,7 +145,7 @@ sequenceDiagram
 
 圖 2.1｜編號 10 從詢問歷史、接受到學習。A2 一持久接受就達到多數，Proposer 與 Learner 稍後才得知。自繪，參考成大講義 P52–P54、P58。A3 即使未回 Promise，也可在 promised_n≤10 時接受 Phase 2。
 
-停在兩張 Promise 到達時，A1 和 A2 的狀態都是 `(promise=10, accepted=None)`。這個多數只限制未來能接受什麼。下一步 A1 先持久接受 `(10,A)`，仍只有一份。等 A2 也持久接受，A 才成為 Chosen，即使第二張 Accepted 回覆還在網路上。P 收到回覆再通知 L，L 確認結果成為 Learned，交給應用執行後才算 Applied。A3 可以稍後追趕。
+停在兩張 Promise 到達時，A1 和 A2 的狀態都是 `(promise=10, accepted=None)`。這個多數只限制未來能接受什麼。下一步 A1 先持久接受 $(10,A)$，仍只有一份。等 A2 也持久接受，A 才成為 Chosen，即使第二張 Accepted 回覆還在網路上。P 收到回覆再通知 L，L 確認結果成為 Learned，交給應用執行後才算 Applied。A3 可以稍後追趕。
 
 P58 主要展示前兩階段。圖 2.1 的 Learn 與 Applied 另依 P54 接上。
 
@@ -189,7 +189,7 @@ on Accept(n, v):
 
 Accept 到達時，Acceptor 不必曾經回覆這位 Proposer 的 Prepare；條件是沒有承諾更大的編號。故 Phase 1 與 Phase 2 quorum 可以不同，只要採用保證相交的 quorum 規則。
 
-當多數不同 Acceptor 接受相同 `(n,v)`，v 即 Chosen。不能把 A1 的 `(10,X)` 與 A2 的 `(20,Y)` 加起來當成某個值的兩票。
+當多數不同 Acceptor 接受相同 $(n,v)$，v 即 Chosen。不能把 A1 的 $(10,X)$ 與 A2 的 $(20,Y)$ 加起來當成某個值的兩票。
 
 ### 7.4 Learn／Commit 與應用
 
@@ -205,7 +205,7 @@ Learner／應用分離時，Learned 不等於 Applied。多個日誌 instance �
 
 ### 8.1 P59：較高 Promise 打斷較低提案
 
-固定 A1、A2、A3，q=2：
+固定 A1、A2、A3，$q=2$：
 
 1. P1 以 `Prepare(10)` 向 A1、A2 取得 Promise，原本想提 X。
 2. P2 以 `Prepare(20)` 向 A2、A3 取得 Promise。
@@ -213,7 +213,7 @@ Learner／應用分離時，Learned 不等於 Applied。多個日誌 instance �
 4. 同訊息到 A2 時，A2 已 promised_n=20，拒絕。
 5. P1 只知道一個 Accepted，不能宣稱 Chosen。稍後要重試，需選大於已知 20 的新編號，重新查歷史。
 
-這時若 P2 的 Phase 1 quorum 是 `{A2,A3}`，且兩者都無 Accepted，它可以合法選 Y。A1 單獨接受過 X 不會永久鎖住全系統只能選 X。
+這時若 P2 的 Phase 1 quorum 是 $\{A_2,A_3\}$，且兩者都無 Accepted，它可以合法選 Y。A1 單獨接受過 X 不會永久鎖住全系統只能選 X。
 
 ```mermaid
 sequenceDiagram
@@ -237,19 +237,19 @@ sequenceDiagram
     A2-->>P1: 拒絕，已承諾 20
 ```
 
-圖 2.2｜A2 更新承諾後拒絕舊請求，A1 單獨接受 X 仍不足 q=2。自繪，參考成大講義 P59。
+圖 2.2｜A2 更新承諾後拒絕舊請求，A1 單獨接受 X 仍不足 $q=2$。自繪，參考成大講義 P59。
 
 ### 8.2 P60：採用 quorum 回報的歷史
 
-P60 另畫 A1 已接受 `(10,X)`，P2 的新回合 `Prepare(20)` 收到 A1 的歷史，因此採用 X。安全的讀法是：P2 用來決定 Phase 2 的 quorum 包含 A1；若還有其他歷史，須比較全部回報後選最大 accepted_n。
+P60 另畫 A1 已接受 $(10,X)$，P2 的新回合 `Prepare(20)` 收到 A1 的歷史，因此採用 X。安全的讀法是：P2 用來決定 Phase 2 的 quorum 包含 A1；若還有其他歷史，須比較全部回報後選最大 accepted_n。
 
 不能把兩張圖硬接成「P2 已以 20 發 Y，後來收到 A1 就又改以 20 發 X」。一旦同一編號的值已發出，就不能改值。需要新編號重新做 Phase 1，或在第一次選值前就使用包含 A1 的 quorum。
 
 ### 8.3 自製例：Prepare(20) 收到 (12,Y)
 
-收到 `Prepare(20)` 前，A1 的承諾為 12，已接受 `(12,Y)`。A2 的承諾為 8，已接受 `(8,X)`。兩台把承諾提高到 20，再各自回傳 `Promise(20,12,Y)` 和 `Promise(20,8,X)`。A3 尚未回覆。
+收到 `Prepare(20)` 前，A1 的承諾為 12，已接受 $(12,Y)$。A2 的承諾為 8，已接受 $(8,X)$。兩台把承諾提高到 20，再各自回傳 `Promise(20,12,Y)` 和 `Promise(20,8,X)`。A3 尚未回覆。
 
-P 的 quorum 為 `{A1,A2}`。比較歷史編號 12 與 8，取 12 對應的 Y，然後發 **`Accept(20,Y)`**。
+P 的 quorum 為 $\{A_1,A_2\}$。比較歷史編號 12 與 8，取 12 對應的 Y，然後發 **`Accept(20,Y)`**。
 
 - **20**：本輪 Proposal Number，Acceptor 將依此編號判斷是否接受。
 - **12**：已收到的歷史 Accepted Proposal Number，用於選值。
@@ -259,7 +259,7 @@ P 的 quorum 為 `{A1,A2}`。比較歷史編號 12 與 8，取 12 對應的 Y，
 
 ### 8.4 已 Chosen 後為何不能改值？
 
-[教學補充／推導] 假設 X 已在編號 10 被 `{A1,A2}` 選定。較高編號 20 的 Phase 1 quorum 若為 `{A2,A3}`，必碰到 A2。A2 必回報歷史，且 Promise 20 後不再接受低於 20 的新請求。
+[教學補充／推導] 假設 X 已在編號 10 被 $\{A_1,A_2\}$ 選定。較高編號 20 的 Phase 1 quorum 若為 $\{A_2,A_3\}$，必碰到 A2。A2 必回報歷史，且 Promise 20 後不再接受低於 20 的新請求。
 
 若回報中最高 accepted_n 是 10，20 必採 X。若最高歷史更大，例如 15，不能僅憑相交就說它一定是 X；還要用歸納不變量：在 10 已 Chosen 的前提下，每個介於 10 與 20 的合法較高提案都已被相同規則約束為 X。因此最高歷史仍帶 X。
 
@@ -269,9 +269,9 @@ Safety 的組合是：**quorum 相交 + 不背棄 Promise + 保留歷史 + 取�
 
 ### 8.5 移除 Adoption 的具體反例
 
-1. A1、A2 已接受 `(10,X)`，所以 X Chosen。
-2. P2 從 A2、A3 取得 Promise 20；A2 正確回報 `(10,X)`。
-3. 若 P2 忽略回報，自選 Y，A2、A3 又接受 `(20,Y)`。
+1. A1、A2 已接受 $(10,X)$，所以 X Chosen。
+2. P2 從 A2、A3 取得 Promise 20；A2 正確回報 $(10,X)$。
+3. 若 P2 忽略回報，自選 Y，A2、A3 又接受 $(20,Y)$。
 4. 同一 instance 的 X、Y 都 Chosen，違反 Agreement。
 
 Acceptor 能接受較大編號本來合法；錯的是 Proposer 沒有遵守跨回合選值規則。
@@ -340,7 +340,7 @@ Ballot 10 可以服務多個 slot；slot 2 也可能曾經在 ballot 8 接受過
 
 ### 11.1 完整正常案例：三節點、Term 4、index 8
 
-[教學補充／推導] A、B、C 都有已提交至 index 7 的相同日誌，最後 entry Term=3。A 的 timeout 先到，無其他競爭；q=2。
+[教學補充／推導] A、B、C 都有已提交至 index 7 的相同日誌，最後 entry Term=3。A 的 timeout 先到，無其他競爭；$q=2$。
 
 任期（Term）標記一輪領導權，日誌索引（Index）標記命令的位置。讀圖時先看 A 如何用選票取得第 4 任期，再看它如何把第 8 筆命令寫入兩台。兩次多數各回答自己的問題。
 
@@ -474,9 +474,9 @@ Leader 找某個 index k，滿足：
 [教學補充／推導；對照原論文 Figure 8] 五節點 S1–S5，q=3，共同前綴到 index1：
 
 1. Term 2，S1 的 `index2=(2,X)` 到達 S1、S2，尚無多數，之後 S1 離線。
-2. Term 3，S5 由 `{S3,S4,S5}` 選出，在自己記下 `index2=(3,Y)`，尚未複寫至多數，之後離線。
+2. Term 3，S5 由 $\{S_3,S_4,S_5\}$ 選出，在自己記下 `index2=(3,Y)`，尚未複寫至多數，之後離線。
 3. Term 4，S1 從 S2、S3 加自己取得選票，並把 X 複寫到 S3。此時 X 在 S1、S2、S3，卻是舊 Term 2 entry。
-4. 若 S1 此時只因三份 X 就宣稱提交，然後離線，S5 可在更高 Term 由 `{S2,S4,S5}` 當選：其最後 entry Term 3 比 S2 的最後 entry Term 2 新，S2 的日誌檢查不會阻擋它。
+4. 若 S1 此時只因三份 X 就宣稱提交，然後離線，S5 可在更高 Term 由 $\{S_2,S_4,S_5\}$ 當選：其最後 entry Term 3 比 S2 的最後 entry Term 2 新，S2 的日誌檢查不會阻擋它。
 5. 新 Leader S5 可把 Y 複寫到多數、覆蓋未提交的 X；若第 4 步曾錯誤提交 X，就造成 Safety violation。
 
 若 S1 在 Term 4 先把新的 `index3=(4,no-op)` 複寫至多數並提交，則 X 會作為其前綴一起提交。之後上述缺少 Term 4 前綴的 S5 無法以 Term 3 尾端取得相交投票者的支持。這就是 currentTerm 提交條件與選舉限制需要一起工作的原因。
@@ -525,7 +525,7 @@ Leader 找某個 index k，滿足：
 
 ## 14. 英文選擇題與逐項解析
 
-以下為自製題，非教授原題。所有 Paxos 題均固定三個 Acceptor、q=2，除非題目另有說明。
+以下為自製題，非教授原題。所有 Paxos 題均固定三個 Acceptor、$q=2$，除非題目另有說明。
 
 ### Q1 — Timeout
 
@@ -584,7 +584,7 @@ A Raft leader in term 4 observes that an entry from term 2 is stored on a majori
 
 ## 15. 可重跑的算例檢查
 
-[教學補充／推導] 在 Repository 根目錄執行 `python tools/verify-examples.py`。共識部分枚舉 N=3、4、5 的多數集合交集，核算 `(12,Y)` 的 Adoption、Raft 三組日誌新舊比較，以及五節點舊 Term 反例的選票可行性。預期有 `PASS: quorum intersections; adoption; Raft freshness and old-term counterexample`。
+[教學補充／推導] 在 Repository 根目錄執行 `python tools/verify-examples.py`。共識部分枚舉 N=3、4、5 的多數集合交集，核算 $(12,Y)$ 的 Adoption、Raft 三組日誌新舊比較，以及五節點舊 Term 反例的選票可行性。預期有 `PASS: quorum intersections; adoption; Raft freshness and old-term counterexample`。
 
 這些檢查支持本文有限案例的算術與狀態條件，沒有探索所有訊息交錯，不等於完整 Paxos／Raft model checking、實際磁碟故障測試或叢集驗收。
 
