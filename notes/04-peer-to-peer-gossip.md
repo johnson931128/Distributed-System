@@ -570,6 +570,71 @@ P115 用 Web 1.0／2.0／3.0 描述 Read-only、Read-write 與區塊鏈相關應
 
 IPFS 的 **內容識別碼（Content Identifier，CID）** 包含 hash 與編碼等資訊，不必等於整個原始檔案的單一 SHA-256。應用可用 CID 指向鏈外資產，並在取回後驗證，但 availability 仍需有人保留與提供內容。Pinning 可讓指定節點保留物件、避免本地垃圾回收；不表示所有節點都自動保存它，也不代表 IPFS 的 routing 就是 Chord。
 
+### 11.1 Blockchain 與 IPFS 之間靠什麼連接？
+
+> [教學補充／推導] 依 P116 的分層架構延伸；IPFS 實作參考官方文件 [Content Identifiers](https://docs.ipfs.tech/concepts/content-addressing/)、[Distributed Hash Tables](https://docs.ipfs.tech/concepts/dht/)、[How IPFS works](https://docs.ipfs.tech/concepts/how-ipfs-works/)、[Pin files](https://docs.ipfs.tech/how-to/pin-files/)（2026-11-25 核對）。
+
+假設遊戲交易平台管理一把武器的持有者及其 100 MB 的 3D 模型 `weapon.obj`。持有者是需要共同驗證的紀錄，適合放在區塊鏈（On-chain）；模型內容很大，則可放在 IPFS（InterPlanetary File System，星際檔案系統）等鏈下（Off-chain）網路。**兩套系統之間的連結是 CID，而不是固定伺服器的 IP 位址。**
+
+發布時先將模型加入 IPFS，取得代表其內容的 CID，再把該 CID 或包含它的 URI 寫入鏈上紀錄。以下 XYZ123 是教學用的簡化識別碼，不是真實 CID。
+
+```text
+Blockchain                     IPFS
+武器 ID：001                   CID：XYZ123
+持有者：玩家 A                 weapon.obj（100 MB）
+模型：ipfs://XYZ123 ─────────→ 模型內容
+```
+
+圖 4.8a｜鏈上紀錄保存鏈下資產的識別資訊，而不是大型檔案本身。箭頭表示資料引用，不表示區塊鏈節點直接連線至 IPFS。自繪，參考成大講義 P116。
+
+Ethereum（以太坊）是本例維護鏈上紀錄的區塊鏈平台；Alchemy 是供應用程式查詢區塊鏈的 Node API 服務，不必由應用自行維護完整節點。最上層的 dApp（Decentralized Application，去中心化應用程式）整合所有權紀錄與模型檔案。兩種查詢可以走不同通道，並非每個請求都要依序通過四層。
+
+### 11.2 IPFS 的檔案有固定位置嗎？
+
+檔案實際上仍然存在某些機器的儲存裝置中，但 CID 不指定哪一台機器。傳統位置定址（Location Addressing）以 `https://server.example/weapon.obj` 指定服務位置；IPFS 的內容定址（Content Addressing）則以 `ipfs://XYZ123` 表示要取得哪份內容。同一內容在相同匯入設定下可得到相同 CID，即使提供者改變也不必改動鏈上的引用。內容改變通常會得到新的 CID；大型檔案的 CID 可代表由多個區塊構成的資料結構，並非必然等於整個檔案的單一 hash。
+
+前面 Chord 使用 DHT 找到 key 的責任節點。IPFS 也使用 DHT，但採用 Kademlia，而非 Chord；其內容路由可以查詢提供者紀錄（Provider Record），找出哪些 Peer 宣告能提供指定內容。簡化來看，假設 XYZ123 的內容由 Peer A、B、C 提供，查詢便能取得候選提供者，再聯絡其中可達的節點。**負責保存 DHT 提供者紀錄的節點，不一定就是保存檔案內容的節點。** IPFS 也有其他內容路由方式，因此 DHT 不是所有讀取必經的唯一機制。
+
+### 11.3 完整讀取流程：從武器編號到模型檔案
+
+假設應用程式尚未快取模型，且以區塊鏈 Node API 與 IPFS DHT 進行查詢：
+
+1. 應用程式以武器 ID 001 查詢鏈上紀錄。
+2. Node API 回傳持有者玩家 A，以及 `ipfs://XYZ123`。
+3. IPFS Client 根據 CID 查找內容提供者；若採用 DHT，可查詢對應的 Provider Records。
+4. Client 取得候選 Peer 的連線資訊，聯絡可達的提供者，下載所需區塊。
+5. 依 CID 及區塊間的雜湊連結驗證內容，再組回模型並顯示在應用程式中。
+
+```mermaid
+sequenceDiagram
+    participant A as dApp
+    participant B as Node API / Blockchain
+    participant I as IPFS Client
+    participant D as IPFS DHT
+    participant P as Provider Peer
+    A->>B: 查詢武器 001
+    B-->>A: Owner A、CID XYZ123
+    A->>I: 請求 CID XYZ123
+    I->>D: 查詢內容提供者
+    D-->>I: 候選 Provider 資訊
+    I->>P: 請求所需區塊
+    P-->>I: 傳回區塊
+    Note over I: 驗證內容並組回檔案
+    I-->>A: weapon.obj
+```
+
+圖 4.8b｜應用程式先取得鏈上 CID，再向 IPFS 取得鏈下資產；為採用 DHT 的簡化正常流程，省略快取、失敗重試及逐區塊查詢。自繪，參考成大講義 P116。
+
+這和 CFS 的分層思想相似：識別碼、節點定位、實際資料傳輸是不同的責任。不過 IPFS 的 DHT 主要協助找到內容提供者，不能直接套用 Chord 的 successor owner 規則。
+
+### 11.4 CID 還在，檔案就一定存在嗎？
+
+不一定。CID 能讓取得的資料接受完整性（Integrity）檢查，卻不能保證資料可用性（Availability）。如果所有提供所需區塊的 Peer 都離線、刪除資料或無法聯絡，即使鏈上仍有 CID，模型也可能讀不到。
+
+Pinning（固定保留）是要求某個 IPFS 節點保留指定內容、避免本地垃圾回收的機制；若需要長期可用，還須維護在線的保存節點或遠端 pinning 服務，並考慮多份獨立副本。Pinning 不等於全網永久複寫。
+
+**重點：區塊鏈保存可驗證的引用與狀態，CID 識別內容，IPFS 尋找並傳輸內容；三者分工，不能彼此取代。**
+
 本節只銜接課程示意，不展開 P239 起的 Blockchain 單元，也不作產品投資或安全程度的排名。
 
 ## 12. 技術比較、限制與速查
