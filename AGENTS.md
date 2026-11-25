@@ -8,13 +8,13 @@
 
 ## 0. Agent 工作方式 (必須遵守)
 
-1. **先讀本檔, 再檢查 Repository 既有檔案. ** 修改既有筆記前先閱讀全文, 避免覆寫人工編修與 HackMD 同步內容.
-2. **先核對教材, 再撰寫. ** 不得只憑檔名, 記憶或網路摘要, 假裝已讀過教授的 PDF. 沒有教材時應在輸出或進度回報明確標示缺少來源; 不可杜撰投影片原文, 頁碼或例題.
-3. **課程教材決定章節與教學範圍; 論文與官方文件負責補充實作, 推導, 架構及技術細節. ** 補充內容不可冒充教授投影片原文.
-4. **目前任務優先是既有筆記的教學式改版. ** 先審閱 Chapter 00–04, 挑一篇完成示範, 再分章改寫; 不因既有筆記"內容完整"而跳過可讀性重構, 不擅自擴寫 P118 以後新課程.
-5. **主要產物為易閱讀的 Markdown 教材. ** GitHub/HackMD 相容; 圖片依第 10 節的"成大講義/MIT 參考"來源規則選用. Mermaid 是工具, 不是每張圖的預設答案; 技術敘述不能退化成圖表與條列堆積.
-6. **先使概念能被理解, 再證明與深究. ** 重要演算法應有可跟著走的正常案例, 必要前提與關鍵故障情境; 依教學需求逐步導入形式化細節, 禁止每節機械式填滿同一套清單.
-7. **改動前檢查 Git 狀態. ** 不改動無關檔案, 不強制推送, 不任意刪除筆記. 新增或重構多份筆記時先規劃章節和預期檔案; 以小而可審查的 commit 提交.
+1. **先讀本檔, 再檢查 Repository 既有檔案.** 修改既有筆記前先閱讀全文, 避免覆寫人工編修與 HackMD 同步內容.
+2. **先核對教材, 再撰寫.** 不得只憑檔名, 記憶或網路摘要, 假裝已讀過教授的 PDF. 沒有教材時應在輸出或進度回報明確標示缺少來源; 不可杜撰投影片原文, 頁碼或例題.
+3. **課程教材決定章節與教學範圍; 論文與官方文件負責補充實作, 推導, 架構及技術細節.** 補充內容不可冒充教授投影片原文.
+4. **目前任務優先是既有筆記的教學式改版.** 先審閱 Chapter 00–04, 挑一篇完成示範, 再分章改寫; 不因既有筆記"內容完整"而跳過可讀性重構, 不擅自擴寫 P118 以後新課程.
+5. **主要產物為易閱讀的 Markdown 教材.** GitHub/HackMD 相容; 圖片依第 10 節的"成大講義/MIT 參考"來源規則選用. Mermaid 是工具, 不是每張圖的預設答案; 技術敘述不能退化成圖表與條列堆積.
+6. **先使概念能被理解, 再證明與深究.** 重要演算法應有可跟著走的正常案例, 必要前提與關鍵故障情境; 依教學需求逐步導入形式化細節, 禁止每節機械式填滿同一套清單.
+7. **改動前檢查 Git 狀態.** 不改動無關檔案, 不強制推送, 不任意刪除筆記. 新增或重構多份筆記時先規劃章節和預期檔案; 以小而可審查的 commit 提交.
 8. **結束時回報**: 修改檔案, 對應 PDF 頁碼, 補充來源, 查核項目, 尚待確認/尚未完成之處. 未實際執行的命令或驗證不可宣稱成功.
 
 ## 1. 權威資料與引用規則
@@ -26,8 +26,8 @@
 - 原文書: `reference/Distributed_Systems_4.pdf`, 685 頁; van Steen 與 Tanenbaum, *Distributed Systems*, 4th edition, 題名頁 Version 4.03x (February 2025). 原文書實體頁碼須標為"原文書 PDF P…". 版本內部差異見`reference/README.md`.
 - 課程簡介以合併講義 P1–P17 為準; 若另有拆分/重排的 PDF, 先核對頁碼對應再引用, 不預設名稱相同即代表頁序相同.
 - 若 PDF 尚未放入 Repository, Agent 應先檢查使用者提供的可讀檔案與工作環境; 取得明確原始檔後再做依據投影片的整理.
-- **公開 Repo 不應直接加入未確認可再散布的 PDF. ** 在`.gitignore` 中忽略`reference/*.pdf`, 並保留`references/private/` 的舊路徑保護; 原始教材僅留本機.
-- **頁碼一律使用重排後合併 PDF 的實體頁碼 P1–P270 (1-based), 不是原始合併檔或各投影片底部的 deck page. **
+- **公開 Repo 不應直接加入未確認可再散布的 PDF.** 在`.gitignore` 中忽略`reference/*.pdf`, 並保留`references/private/` 的舊路徑保護; 原始教材僅留本機.
+- **頁碼一律使用重排後合併 PDF 的實體頁碼 P1–P270 (1-based), 不是原始合併檔或各投影片底部的 deck page.**
 
 ### 1.2 引用格式
 
@@ -37,27 +37,27 @@
 > 延伸參考: Leslie Lamport, *Paxos Made Simple* (附可用 URL).
 
 - 引用時指出實際頁碼, 文獻標題和連結; 不得虛構 DOI, URL, 引文或版號.
-- **來源層級**必須清楚: `[課程講義]`, `[原始論文／官方文件]`, `[教學補充／推導]`, `[待確認]`.
+- **來源層級** 必須清楚: `[課程講義]`, `[原始論文／官方文件]`, `[教學補充／推導]`, `[待確認]`.
 - 教授投影片是課程考點的依據; 若教材有簡化, 易混淆說法, 先忠實記錄課堂表述, 再另外標明"技術補充/更精確的說法", 不得暗中替換.
 - 使用網頁來源前優先選論文作者頁面, 學術出版頁面, 官方文件和實際專案文件. 會隨版本變動的行為應註明版本或查詢日期.
 - 不大量逐字複製投影片, 論文或網站內容; 以自行整理的解釋, 例子與原創圖為主.
 
 ### 1.3 經核對的外部參考資料
 
-**基礎理論, Logical Clocks, Checkpointing: **
+**基礎理論, Logical Clocks, Checkpointing:**
 
 - Leslie Lamport, *Time, Clocks, and the Ordering of Events in a Distributed System*:https://lamport.azurewebsites.net/pubs/time-clocks.pdf
 - K. Mani Chandy and Leslie Lamport, *Distributed Snapshots: Determining Global States of Distributed Systems*:https://lamport.azurewebsites.net/pubs/chandy.pdf
 - MIT 6.5840 (原 6.824) Distributed Systems 課程及 lecture notes/readings:https://pdos.csail.mit.edu/6.824/schedule.html（2026 春季頁面); **作為參考資料, 不能代替成大講義決定授課順序**.
 
-**Fault Tolerance, Consensus, Paxos, Raft: **
+**Fault Tolerance, Consensus, Paxos, Raft:**
 
 - Leslie Lamport, *Paxos Made Simple* (作者文獻清單):https://lamport.azurewebsites.net/pubs/pubs.html
 - Leslie Lamport, *The Paxos Algorithm*:https://lamport.azurewebsites.net/tla/paxos-algorithm.html
 - Diego Ongaro and John Ousterhout, *In Search of an Understandable Consensus Algorithm*:https://raft.github.io/raft.pdf
 - Raft 官方教學與互動資源:https://raft.github.io/
 
-**後續章節的官方文件 (只在對應章節實際撰寫時引用): **
+**後續章節的官方文件 (只在對應章節實際撰寫時引用):**
 
 - Apache ZooKeeper Programmer's Guide:https://zookeeper.apache.org/doc/current/zookeeperProgrammers.html
 - Apache HBase Reference Guide:https://hbase.apache.org/docs/
@@ -104,7 +104,7 @@ Distributed-System/
 ```
 
 -`README.md` 應提供章節名稱, 投影片範圍, 學習進度, GitHub 相對路徑, 對應 HackMD URL (若已知); 未知的 HackMD URL 寫`待連結`, 不可編造.
-- 章節筆記每一份對應一個`.md` 檔案, 方便 HackMD **逐篇**連結 GitHub, 避免將所有課程內容塞入一份巨大文件.
+- 章節筆記每一份對應一個`.md` 檔案, 方便 HackMD **逐篇** 連結 GitHub, 避免將所有課程內容塞入一份巨大文件.
 - 章節內可有多個`##`/`###`, 不要以一頁投影片產生一個檔案.
 - 不要自動建立一堆只有標題的未學習章節; 可先在 README 列出未來規劃.
 
@@ -112,7 +112,7 @@ Distributed-System/
 
 ### 3.1 內容目的與閱讀順序
 
-**筆記不是逐頁翻譯, 技術百科, 論文註解集合, 也不是考前速查表的放大版. ** 成果應能從零連貫閱讀: 讀者先理解"為何需要", 再看"系統如何運作", 最後能自行推演與辨認設計限制.
+**筆記不是逐頁翻譯, 技術百科, 論文註解集合, 也不是考前速查表的放大版.** 成果應能從零連貫閱讀: 讀者先理解"為何需要", 再看"系統如何運作", 最後能自行推演與辨認設計限制.
 
 - **以講義確立主線**: 先完整核對本章投影片, 把連續幾頁回答的共同問題串成一節. 講義給出的名詞, 範圍, 推進順序, 例子與取捨必須保留; **一個概念群是一節, 不是每張投影片一節**.
 - **把各頁串成因果故事**: 前一節提出的瓶頸, 應自然引出下一節的解法. 每個新機制先用一至兩段回答"前面的方法缺少什麼""為何不直接沿用原方法".
@@ -125,7 +125,7 @@ Distributed-System/
 
 編輯前先做一份內部章節映射, 至少記錄: (a) 講義頁碼與頁面主題, (b) 該頁回答的問題, (c) 本文對應小節, (d) 前後概念依賴, (e) 合適的教材圖片及原文書章節/論文. 映射可放在工作紀錄; 正文不需重現大型頁碼清單.
 
-推薦每個主要概念群使用以下**彈性**節奏, 不強制每節都放滿五種元素:
+推薦每個主要概念群使用以下 **彈性** 節奏, 不強制每節都放滿五種元素:
 
 1. **問題與情境**: 用短場景呈現原方法為何不足.
 2. **核心原理**: 嵌入精確的定義, 必要條件, 名詞如何運作, 不做孤立名詞大全.
@@ -137,10 +137,10 @@ Distributed-System/
 
 ### 3.3 文字密度與版面約束
 
-- 繁體中文為主; 專有術語首次採 **中文 (English) **, 之後維持一致的名稱. 新術語必須解釋**它負責什麼, 如何操作, 與上一個概念有何關係**.
+- 繁體中文為主; 專有術語首次採 **中文 (English)**, 之後維持一致的名稱. 新術語必須解釋 **它負責什麼, 如何操作, 與上一個概念有何關係**.
 - 以自然段落為主要敘述單位, 每段聚焦一個可理解的問題. 連續的大段堆疊, 滿頁粗體術語, 長串警告與一整節純表格, 均視為待重寫.
 - 標題反映問題或推理 (例如"為什麼已有 IP Routing 還需要 Overlay? "); 避免全篇只是"定義/優點/缺點/比較/補充"的重複模板.
-- 只有**比較多個選項**或**呈現固定欄位狀態**才用表格. 時序演變優先圖或逐步案例, 因果關係優先完整段落; 不要以表格代替解釋.
+- 只有 **比較多個選項** 或 **呈現固定欄位狀態** 才用表格. 時序演變優先圖或逐步案例, 因果關係優先完整段落; 不要以表格代替解釋.
 - 程式碼/偽碼, 公式與圖說需在正文解釋關鍵操作與變數. 符號必須先定義, 必要時手算至少一個非平凡案例.
 - 必要 caveat 不能省, 但應集中在相關概念理解之後的"適用前提/限制"段落, 避免每一句結論後都接長篇例外情境.
 - 正文避免稱呼讀者, AI 自述, 浮誇語氣, 空泛形容詞與無根據的效能斷言; 文風應像一本清楚的教科書, **不是規格文件或稽核報告**.
@@ -151,6 +151,12 @@ Distributed-System/
 - 中文筆記一律使用半形 ASCII 標點, 包括逗號, 句號, 冒號, 分號, 問號, 驚嘆號, 括號, 斜線及引號. 標點後依閱讀需要留一個半形空格; 不要使用全形標點或全形空格. 中文文字維持繁體.
 - Markdown 標題只使用純文字, 不放行內或區塊 LaTeX; 重要數學式移至標題下方的正文或獨立公式, 以避免 GitHub 和 HackMD 標題渲染不一致.
 - 圖表標籤, 程式碼, API, 命令, URL, 檔案路徑與原始引用若需保留原始內容, 不為排版任意改寫; 表格的直線分隔符與 Markdown 語法不得遭到破壞.
+
+#### Markdown 渲染與驗收
+
+- 粗體標記的內側不得有空白, 如 `**重點**` 正確, `**重點 **` 錯誤. 粗體與相鄰中文或英文文字之間保留半形空格; 不把公式包在粗體或斜體標記之內. 保留重點文字的粗體, 公式以獨立的數學標記呈現.
+- 行內數學式的分隔符號必須成對, 不可將兩組行內公式直接拼成連續的美元符號. 相鄰的數學運算合併成一個公式; 多行公式獨立成段, 不使用標題或粗體包住公式.
+- 批次修改標點或公式後, 必須逐章檢查粗體開閉、數學分隔符、表格欄數、連結及程式碼區塊. 檢查 Markdown 解析結果是否仍出現本應被渲染的標記; 不得只統計替換次數就宣稱排版完成. 若無法進行 GitHub/HackMD 的實際畫面驗收, 必須明確區分靜態檢查與實際渲染.
 
 #### 數學排版規範 (所有章節適用)
 
@@ -163,33 +169,33 @@ Distributed-System/
 
 ### 3.4 圖像策略: 先有可信依據, 再決定怎麼畫
 
-**允許的視覺依據限定為: **
+**允許的視覺依據限定為:**
 
 1. **成大教授提供的本章課程講義圖表**: 頁碼與概念最直接匹配, 優先選用.
 2. **MIT 6.824/6.5840 的相關 lecture notes, slides 或其課程頁面連結的原始論文圖**: 只作為補充比對; 先確認它確實在說同一機制與假設.
 3. **依上述教材自行重新繪製的教學圖**: 簡化元素可以, 但必須保持角色, 箭頭, 狀態與因果關係正確, 並標明"自繪; 參考成大講義 P…/MIT …". 禁止無來源即興畫出似是而非的協定圖.
 
-**不以 AI 生成裝飾圖, 隨機網路圖片, 庫存素材或一般網路搜尋圖片充數. ** 原講義與 MIT 的圖片**不代表可任意放入公開 GitHub**: 直接截圖, 下載, 修改或重新發布前, 須先確認具體圖片的可使用/再發布條件及必要署名; 若無法確認, **不提交原圖**, 改以原創忠實重繪或連結原始教材. 重繪仍須避免照搬未獲許可的具創作性構圖.
+**不以 AI 生成裝飾圖, 隨機網路圖片, 庫存素材或一般網路搜尋圖片充數.** 原講義與 MIT 的圖片 **不代表可任意放入公開 GitHub**: 直接截圖, 下載, 修改或重新發布前, 須先確認具體圖片的可使用/再發布條件及必要署名; 若無法確認, **不提交原圖**, 改以原創忠實重繪或連結原始教材. 重繪仍須避免照搬未獲許可的具創作性構圖.
 
-選圖按機制選擇: 架構用角色連線圖, 訊息互動用時序圖, 選舉/鎖用狀態變化, Snapshot 用時間軸, DHT 用 Ring/座標圖, Gossip 用輪次對照. 圖的**數量取決於是否消除理解障礙**, 不以每一頁必插圖充數. Mermaid 適合簡單流程/sequence; 複雜拓樸或需要忠實呈現講義資訊時, 優先使用可核對的 SVG/PNG 原創圖. 每張圖都需有 caption, 來源, 圖中縮寫解釋及正文指引; 沒有圖也應能讀懂核心機制.
+選圖按機制選擇: 架構用角色連線圖, 訊息互動用時序圖, 選舉/鎖用狀態變化, Snapshot 用時間軸, DHT 用 Ring/座標圖, Gossip 用輪次對照. 圖的 **數量取決於是否消除理解障礙**, 不以每一頁必插圖充數. Mermaid 適合簡單流程/sequence; 複雜拓樸或需要忠實呈現講義資訊時, 優先使用可核對的 SVG/PNG 原創圖. 每張圖都需有 caption, 來源, 圖中縮寫解釋及正文指引; 沒有圖也應能讀懂核心機制.
 
 ### 3.5 原文書與補充資料的使用規則
 
 - **主來源=成大講義**, 決定教學範圍, 論述順序與課堂重點; **理論基礎=van Steen/Tanenbaum"Distributed Systems"第 4 版** (本地檔`reference/Distributed_Systems_4.pdf`); **外部輔助=MIT 6.5840 課程教材及對應原始論文/官方文件**.
 - 補充原理時, 優先從原文書定位精確章/節/PDF 頁碼, 再用必要的原始論文解釋演算法條件; MIT 的教學組織與圖僅供改善講法, 不可把 MIT 的內容冒充成大授課要求.
 - 實際閱讀, 核對過才能標示引用. 至少在主要小節就近標註`[課程講義] P…`, 補充處標註`[原文書] 第…章／§…／PDF P…`, `[MIT 教材] 標題 + URL` 或`[原始論文]`. 沒有取得完整來源或定位不到段落時, 標"待查", 不得猜頁碼.
-- 原文書擅長定義與理論解釋, 論文擅長證明與實作條件; 把其內容**消化成自己的連續論述與案例**, 不貼整頁原文, 不逐句翻譯大量外部文字.
-- 講義的教學簡化與技術上更完整的條件若不完全相同, 先忠實呈現講義, 再以緊鄰而**簡短清楚**的"技術補充"說明差異; 保留必要 Safety 前提, 避免用大量枝節中斷主敘事.
+- 原文書擅長定義與理論解釋, 論文擅長證明與實作條件; 把其內容 **消化成自己的連續論述與案例**, 不貼整頁原文, 不逐句翻譯大量外部文字.
+- 講義的教學簡化與技術上更完整的條件若不完全相同, 先忠實呈現講義, 再以緊鄰而 **簡短清楚** 的"技術補充"說明差異; 保留必要 Safety 前提, 避免用大量枝節中斷主敘事.
 
 ### 3.6 品質示例: P2P/Overlay 章的理想銜接
 
 應按教授的問題鏈串起 P93–P95:
 
-**"Client-Server 將資源集中"→"P2P 動員邊緣 Peer"→"Peers 如何知道與誰交換資料? "→"建立 Overlay 的邏輯連線與應用層路由"→"邏輯連線底層仍走 IP, 因此可能增加 latency"→"不修改 Router, 也能讓 Peers 實作 ESM/ALM 多播". **
+**"Client-Server 將資源集中"→"P2P 動員邊緣 Peer"→"Peers 如何知道與誰交換資料? "→"建立 Overlay 的邏輯連線與應用層路由"→"邏輯連線底層仍走 IP, 因此可能增加 latency"→"不修改 Router, 也能讓 Peers 實作 ESM/ALM 多播".**
 
-談 Overlay 時必須回答兩個常見問題: **(1) 一次 Logical Hop 的耗時本來就包含底層 Physical Path 的傳輸與路由延遲; (2) Overlay 的主要目的不是美化拓樸圖, 而是提供應用程式自主的資源發現, 定位與轉送規則. ** 將這些問答融入教科書式解說, 避免孤立地在後面追加 Q&A 作補丁.
+談 Overlay 時必須回答兩個常見問題: **(1) 一次 Logical Hop 的耗時本來就包含底層 Physical Path 的傳輸與路由延遲; (2) Overlay 的主要目的不是美化拓樸圖, 而是提供應用程式自主的資源發現, 定位與轉送規則.** 將這些問答融入教科書式解說, 避免孤立地在後面追加 Q&A 作補丁.
 
-每個新章節建立類似的課程主線, 並用**連接句**解釋從上一個技術到下一個技術的必要性.
+每個新章節建立類似的課程主線, 並用 **連接句** 解釋從上一個技術到下一個技術的必要性.
 
 ## 4. 已學習章節: 必須涵蓋的主題與頁碼
 
@@ -211,7 +217,7 @@ Distributed-System/
 ### Chapter 02 — Fault Tolerance, Paxos & Raft (P41–P62)
 
 - P44–P46: Crash/Omission/Byzantine Fault 與 Asynchronous Network; failure detector 無法只憑 timeout 判定故障.
-- P47–P49: Consensus 的 Safety/Liveness, FLP 的**正確假設與限制**; 投影片示例是直覺, 不應稱為 FLP 的形式證明.
+- P47–P49: Consensus 的 Safety/Liveness, FLP 的 **正確假設與限制**; 投影片示例是直覺, 不應稱為 FLP 的形式證明.
 - P50–P51: Proposer, Acceptor, Learner 的邏輯角色; 一個實體伺服器可擔任多個角色. Learner 不計入 Acceptor Quorum.
 - P52–P54: 逐步推演 Prepare / Promise → Accept / Accepted → Chosen / Learned / Applied; 附至少一張三角色訊息序列圖.
 - P55–P57: 三個角色的 lifecycle, 逾時/重試, 保存的狀態; 區分`promise number`, `accepted proposal number`, `accepted value`.
@@ -220,8 +226,8 @@ Distributed-System/
 - P61: Basic Paxos vs. Multi-Paxos, Replicated Log, Stable Leader 最佳化, Log Index 與 Proposal Number 的區別.
 - P62: Raft 的 Leader Election, Log Replication, Safety; 與 Basic Paxos, Multi-Paxos 做架構與訊息路徑比較.
 - 必須明確區分`Proposed`, 單一 Acceptor 的`Accepted`, 多數 Acceptor 的`Chosen`, Learner 的`Learned`, 應用的`Applied`.
-- **課程用語的精確性: ** P54 將通知/學習結果稱為 Phase 3 (Commit / Learn); 在經典 Basic Paxos 的標準核心共識描述中, Phase 1 與 Phase 2 為核心, 學習/通知屬後續機制. 此差異應以"課堂表示 vs. 演算法常見表述"註明, 不可混為一談.
-- **安全性提醒: ** Quorum intersection 本身不等於完整 Safety 證明; 還需 Promise 與歷史已接受值的選擇規則. Timeout 不代表提案必然未被 Chosen.
+- **課程用語的精確性:** P54 將通知/學習結果稱為 Phase 3 (Commit / Learn); 在經典 Basic Paxos 的標準核心共識描述中, Phase 1 與 Phase 2 為核心, 學習/通知屬後續機制. 此差異應以"課堂表示 vs. 演算法常見表述"註明, 不可混為一談.
+- **安全性提醒:** Quorum intersection 本身不等於完整 Safety 證明; 還需 Promise 與歷史已接受值的選擇規則. Timeout 不代表提案必然未被 Chosen.
 - 不要把"任意接受過的值"錯認為"已由多數選定的值", 也不要把"編號大的 Proposal"誤解成"數值上較大的 Value".
 
 ## 5. 改版範圍與技術正確性
@@ -234,12 +240,12 @@ Distributed-System/
 
 ## 6. HackMD ↔ GitHub 協作規範
 
-- **GitHub Repo 是 Codex 撰寫與版本控制的來源; HackMD 是閱讀, 手動註解與分享介面. **
-- HackMD 的 GitHub Sync 以**單篇 Note 對應單個 GitHub Markdown 檔案**為操作單位, 不應假設 HackMD 資料夾會自動雙向同步整個 Repository.
-- **對於已存在內容的 HackMD Note: ** 先在 HackMD 備份並使用 **Versions and GitHub Sync → Push to GitHub**, 建立對應的`notes/*.md`, 再由 Codex 從 GitHub 接續擴寫.
-- **對於 Codex 先建立的新筆記: ** 在 HackMD 新建空 Note, 使用 **Versions and GitHub Sync → Pull from GitHub**, 連結正確的`repo / main / notes/filename.md`.
+- **GitHub Repo 是 Codex 撰寫與版本控制的來源; HackMD 是閱讀, 手動註解與分享介面.**
+- HackMD 的 GitHub Sync 以 **單篇 Note 對應單個 GitHub Markdown 檔案** 為操作單位, 不應假設 HackMD 資料夾會自動雙向同步整個 Repository.
+- **對於已存在內容的 HackMD Note:** 先在 HackMD 備份並使用 **Versions and GitHub Sync → Push to GitHub**, 建立對應的`notes/*.md`, 再由 Codex 從 GitHub 接續擴寫.
+- **對於 Codex 先建立的新筆記:** 在 HackMD 新建空 Note, 使用 **Versions and GitHub Sync → Pull from GitHub**, 連結正確的`repo / main / notes/filename.md`.
 - 後續 Codex 修改並 Push → HackMD 手動 Pull; HackMD 若有編修, 先在 HackMD Push, 再讓 Codex`git pull --ff-only` 取得變更後繼續工作.
-- **兩邊不要同時修改同一篇筆記卻未先同步. ** 遇到差異先保存版本與人工確認, 避免用覆寫解決衝突.
+- **兩邊不要同時修改同一篇筆記卻未先同步.** 遇到差異先保存版本與人工確認, 避免用覆寫解決衝突.
 - HackMD 資料夾名稱, Note 標題, GitHub 路徑是不同概念; 可重新整理 HackMD 資料夾, 但不要因此推斷 GitHub 目錄會自動跟著更新.
 - 建議對照: HackMD`checkpoint` →`notes/01-logical-clocks-checkpointing.md`; HackMD`Fault Telorant & Paxos & Raft` →`notes/02-fault-tolerance-paxos-raft.md` (GitHub 使用修正拼字的檔名).
 - 若 HackMD Note 已有使用者編輯內容, 第一次連結時必須先備份/匯出, 評估要 Push 還是 Pull, 避免覆蓋原筆記.
@@ -247,12 +253,12 @@ Distributed-System/
 
 ## 7. 完成與驗收標準 (Definition of Done)
 
-每章重寫完成後, 必須從**第一次接觸該主題的讀者**角度檢查:
+每章重寫完成後, 必須從 **第一次接觸該主題的讀者** 角度檢查:
 
 - [ ] 第一頁能回答"本章為什麼存在", 並看得出教授投影片的完整概念路線.
-- [ ] 相鄰主題有**因果過渡**; 每個新增機制都交代前一個方法的限制, 沒有只靠連續標題跳題.
+- [ ] 相鄰主題有 **因果過渡**; 每個新增機制都交代前一個方法的限制, 沒有只靠連續標題跳題.
 - [ ] 重要名詞在首次出現時就有定義及操作說明; 不必先查外部資料才能跟上例子.
-- [ ] 至少有符合本章特性的**完整, 可重算**的正常流程與一個必要反例; 圖, 文字, 步驟的狀態一致.
+- [ ] 至少有符合本章特性的 **完整, 可重算** 的正常流程與一個必要反例; 圖, 文字, 步驟的狀態一致.
 - [ ] 圖解能解釋實際關係, 圖中所有箭頭, 角色, 版本與時間概念正確; 圖片來源及使用條件可追溯.
 - [ ] 講義頁碼, 原文書章節, MIT/論文的引用精確, 並區分教授簡化與補充推導.
 - [ ] 首輪閱讀不會遇到大片純表格, 密集警告, 連續技術名詞或段落堆疊; 用章節導覽和短段落降低閱讀負擔.
@@ -285,7 +291,7 @@ Distributed-System/
 1. 公開 Repo 中允許發布的圖片統一放在`assets/`, 以可辨識名稱及章節分組 (例如`assets/diagrams/ch04-overlay-ip-path.png`). 不得附帶講義/原文書 PDF.
 2. **圖解內容的參考來源只限第 3.4 節所述的成大講義與 MIT 6.824/6.5840 相關材料**; 若直接重用圖片, 先確認該張圖片的權利條件, 必要署名與可重製範圍; 未確認時選擇有出處的原創重繪或只附原始來源連結, 不可假定課程公開即可自由轉貼.
 3. 圖片的正文上下必須解釋如何閱讀, 附來源頁碼/課程 URL, 圖說, 使用/重繪註記及可讀的 alt text. 圖片不能成為唯一講授途徑.
-4. 外部圖片 URL 使用完整`https://raw.githubusercontent.com/johnson931128/Distributed-System/main/assets/...`; 在檔案尚未 push/URL 尚不可存取前, 記錄為**未驗證**, 不要聲稱已能在 HackMD 顯示. 若因未 push 不便預覽, 先用本機相對路徑編輯, 發布時再改成正式路徑.
+4. 外部圖片 URL 使用完整`https://raw.githubusercontent.com/johnson931128/Distributed-System/main/assets/...`; 在檔案尚未 push/URL 尚不可存取前, 記錄為 **未驗證**, 不要聲稱已能在 HackMD 顯示. 若因未 push 不便預覽, 先用本機相對路徑編輯, 發布時再改成正式路徑.
 5. Mermaid 可用於簡單流程與時序, 但必須檢查 GitHub/HackMD 相容性; 需要精確配色, 路線, 環狀拓樸或多欄狀態圖時可採原創 SVG/PNG, 必要時提供 PNG 備援.
 6. HackMD 每篇筆記與一個 GitHub Markdown 檔案對應; Codex 改寫後的 GitHub 版本先經人工比對, 再由 HackMD Pull. 已有 HackMD 編輯時先備份/同步, 不能以空白 Note Push 覆蓋.
 7. 驗證報告須分開"本機 Markdown/圖片檢查""GitHub 實際渲染""HackMD 實際渲染"三類, 不可拿 Markdown 解析成功代替已測過線上畫面.
