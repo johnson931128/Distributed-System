@@ -44,7 +44,7 @@ P71–P72 的讀寫比例、microsecond latency、P88 的讀取吞吐成長描�
 
 ### 3.1 寫入至少要經過哪些伺服器？
 
-普通等權重配置中，有 N 個投票伺服器，**多數法定人數（Majority Quorum）** 為 `q = ⌊N/2⌋ + 1`。Leader 自己也是投票群體的一員。非投票 Observer 不增加分母；本節不涵蓋 weighted／hierarchical quorum 或配置變更。
+普通等權重配置中，有 N 個投票伺服器，**多數法定人數（Majority Quorum）** 為 $q=\left\lfloor\frac{N}{2}\right\rfloor+1$。Leader 自己也是投票群體的一員。非投票 Observer 不增加分母；本節不涵蓋 weighted／hierarchical quorum 或配置變更。
 
 例如 N=5，q=3；三台仍能互通且恢復協定完成時，可以繼續處理更新。N=4 時 q=3，不是 2。P78 畫 Leader 加三個 Followers，其「2 out of 3」可安全讀為 Leader 自身已可靠記錄，再加三個 Followers 中的兩個 ACK，共三個 voting servers。
 
@@ -345,7 +345,7 @@ An ensemble has one voting leader, three voting followers, and two non-voting ob
 - C. Four.
 - D. Six.
 
-**答案：B。** A：四名投票者的半數不夠。B：`floor(4/2)+1=3`，可包含 Leader。C：不必全體。D：Observer 不計票。
+**答案：B。** A：四名投票者的半數不夠。B：$\left\lfloor\frac{4}{2}\right\rfloor+1=3$，可包含 Leader。C：不必全體。D：Observer 不計票。
 
 ### Q2 — Standard Watch
 
