@@ -75,7 +75,7 @@ P49 的 A 提 0, B 提 1, 等待 C 是直覺示意, 不是 FLP 的形式證明. 
 
 兩個多數集合 Q1, Q2 必相交, 因為 $\lvert Q_1\cap Q_2\rvert\ge \lvert Q_1\rvert+\lvert Q_2\rvert-N\ge 2q-N>0$. $N=5$ 時, $\{A_1,A_2,A_3\}$ 與 $\{A_3,A_4,A_5\}$ 交於 A3.
 
-相交提供跨回合傳遞歷史的節點, 但若 A3 不記得接受過什麼, 或新 Proposer 忽略歷史, 就仍可能改選不同值. Safety 還需要 Promise, 持久 Accepted 狀態與 Value Adoption 規則.
+相交只提供跨回合傳遞歷史的機會; 為何仍需要 Promise, 持久 Accepted 狀態及 Value Adoption, 會在 §8.4–§8.5 證明與舉例.
 
 對 $N=2f+1$ 的固定成員 Crash 模型, 多數可容許 f 個不可達者而繼續工作, 但前提仍含訊息與協調者的進展條件. 超過 f 個不可達不代表既有決定自動變錯, 只是通常不能再取得 quorum. 若為了恢復可用性任意縮小配置, 可能讓兩個不相交群體各自提交, 破壞保證.
 
@@ -197,7 +197,7 @@ P54 將結果通知稱作 **Phase 3 (Commit/Learn)**. 經典 Basic Paxos 的標�
 
 若 Learner 相信正確, 非 Byzantine Proposer 的通知, Proposer 可在確認多數後送`Commit(instance,n,v)`; 若由 Accepted 通知自行判斷, 必須驗證 instance, n, v, 不同 Acceptor 與 quorum. 不能收到單一 Acceptor 的 Accepted 就 Applied.
 
-Learner/應用分離時, Learned 不等於 Applied. 多個日誌 instance 也必須按 log index 順序套用, 不能跳過前面尚未決定的位置.
+Learner 將結果交給應用後的執行順序, 統一在 §10.3 討論.
 
 ## 8. 競爭, 拒絕與 Value Adoption
 
@@ -342,7 +342,7 @@ Ballot 10 可以服務多個 slot; slot 2 也可能曾經在 ballot 8 接受過�
 
 [教學補充/推導] A, B, C 都有已提交至 index 7 的相同日誌, 最後 entry Term=3. A 的 timeout 先到, 無其他競爭; $q=2$.
 
-任期 (Term) 標記一輪領導權, 日誌索引 (Index) 標記命令的位置. 讀圖時先看 A 如何用選票取得第 4 任期, 再看它如何把第 8 筆命令寫入兩台. 兩次多數各回答自己的問題.
+沿用 §10.1 的日誌索引 (Index); 任期 (Term) 則是單調增加的領導世代, 每個 Term 最多一位成功當選的 Leader, 也可能沒有 Leader. 讀圖時先看 A 如何用選票取得第 4 任期, 再看它如何把第 8 筆命令寫入兩台. 兩次多數各回答自己的問題.
 
 ```mermaid
 sequenceDiagram
@@ -374,7 +374,7 @@ C 可較晚用相同前綴檢查追上. A 收到 B 的持久 ACK 後得知多數
 
 固定 N 個 voting servers, Crash 模型, 可持久化儲存, 基本 quorum 仍為多數. 成員變更, 快照傳輸與 PreVote 等實作擴充不在這份核心流程內; 它們需要另行規範.
 
-**任期 (Term)** 是單調增加的邏輯 epoch; 每個 Term 最多一個成功當選的 Leader, 也可能沒有 Leader. 不同 Term 的 Leader 可在分區中暫時都自認為在任, 但舊 Term 不能繞過多數與任期檢查繼續提交.
+不同 Term 的 Leader 可在分區中暫時都自認為在任, 但舊 Term 不能繞過多數與任期檢查繼續提交.
 
 | 狀態 | 用途 | 保存方式 |
 | --- | --- | --- |
@@ -513,7 +513,7 @@ Leader 找某個 index k, 滿足:
 
 "Raft 有 Leader, Paxos 沒 Leader"是錯誤二分; 實用 Multi-Paxos 也常依賴 Stable Leader. Raft 與 Multi-Paxos 不只是改名: 前者把日誌與選舉規則一起限制, 後者常以各 slot 的 Accepted 歷史恢復安全值.
 
-上述 RPC 輪數排除 Client 往返, 落盤, 排隊, batching 與 follower 結果通知. 若同步儲存是主成本, 少一輪控制訊息不一定等於端到端延遲減半.
+依 §10.2 的輪數計算範圍比較即可; 若同步儲存是主要成本, 少一輪控制訊息不一定等於端到端延遲減半.
 
 ## 13. 當應用把命令交給複寫服務
 
