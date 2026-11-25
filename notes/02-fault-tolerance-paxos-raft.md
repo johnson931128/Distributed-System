@@ -259,7 +259,7 @@ P 的 quorum 為 $\{A_1,A_2\}$. 比較歷史編號 12 與 8, 取 12 對應的 Y,
 
 ### 8.4 已 Chosen 後為何不能改值?
 
-[教學補充/推導] 假設 X 已在編號 10 被 $\{A_1,A_2\}$ 選定. 較高編號 20 的 Phase 1 quorum 若為 $\{A_2,A_3\}$, 必碰到 A2. A2 必回報歷史, 且 Promise 20 後不再接受低於 20 的新請求.
+假設 X 已在編號 10 被 $\{A_1,A_2\}$ 選定. 較高編號 20 的 Phase 1 quorum 若為 $\{A_2,A_3\}$, 必碰到 A2. A2 必回報歷史, 且 Promise 20 後不再接受低於 20 的新請求.
 
 若回報中最高 accepted_n 是 10, 20 必採 X. 若最高歷史更大, 例如 15, 不能僅憑相交就說它一定是 X; 還要用歸納不變量: 在 10 已 Chosen 的前提下, 每個介於 10 與 20 的合法較高提案都已被相同規則約束為 X. 因此最高歷史仍帶 X.
 
@@ -295,7 +295,7 @@ Acceptor 重啟後恢復 promised_n 與 Accepted pair; Learner 可重新取得�
 
 Client 發出`withdraw(10)`, Leader 已 Applied, 但回覆遺失. Client 若直接把它當成新請求重送, 可能扣款兩次. 共識保證每個位置決定一致, 不保證不同位置的兩次相同操作自動去重.
 
-[延伸補充/推導] 以`(client_id, request_id)` 作唯一識別, 狀態機保存已執行結果; 重送同 ID 回傳原結果, 才可避免同一邏輯請求重複執行. 去重狀態也必須被複寫與納入快照. 這是應用協定, 不是把 timeout 調長就能取代.
+以`(client_id, request_id)` 作唯一識別, 狀態機保存已執行結果; 重送同 ID 回傳原結果, 才可避免同一邏輯請求重複執行. 去重狀態也必須被複寫與納入快照. 這是應用協定, 不是把 timeout 調長就能取代.
 
 ### 9.3 Dueling Proposers 與進展
 
@@ -335,12 +335,12 @@ Ballot 10 可以服務多個 slot; slot 2 也可能曾經在 ballot 8 接受過�
 
 ## 11. Raft: 將共識拆成可理解的子問題
 
-> [課程講義] P62: Understandability, Leader Election, Log Replication, Safety 與 Strong Leader.
-> [延伸補充] 下列完整規則依 [Ongaro 與 Ousterhout, In Search of an Understandable Consensus Algorithm, Extended Version](https://raft.github.io/raft.pdf), Figure 2, §5.1–§5.4, §8. 原文書 PDF P305–P306, P493–P495 僅作概念對照.
+> 課程依據: P62: Understandability, Leader Election, Log Replication, Safety 與 Strong Leader.
+> 補充依據: 下列完整規則依 [Ongaro 與 Ousterhout, In Search of an Understandable Consensus Algorithm, Extended Version](https://raft.github.io/raft.pdf), Figure 2, §5.1–§5.4, §8. 原文書 PDF P305–P306, P493–P495 僅作概念對照.
 
 ### 11.1 完整正常案例: 三節點, Term 4, index 8
 
-[教學補充/推導] A, B, C 都有已提交至 index 7 的相同日誌, 最後 entry Term=3. A 的 timeout 先到, 無其他競爭; $q=2$.
+A, B, C 都有已提交至 index 7 的相同日誌, 最後 entry Term=3. A 的 timeout 先到, 無其他競爭; $q=2$.
 
 沿用 §10.1 的日誌索引 (Index); 任期 (Term) 則是單調增加的領導世代, 每個 Term 最多一位成功當選的 Leader, 也可能沒有 Leader. 讀圖時先看 A 如何用選票取得第 4 任期, 再看它如何把第 8 筆命令寫入兩台. 兩次多數各回答自己的問題.
 
@@ -392,7 +392,7 @@ $\mathrm{lastApplied}\le\mathrm{commitIndex}$. 跟隨者擁有某個 log entry, 
 
 **追隨者 (Follower)** 等待 Leader 的 AppendEntries/heartbeat; 若 election timeout 到期, 轉為 **候選者 (Candidate)**:
 
-1.`currentTerm += 1`, 持久化, 投自己一票並保存 votedFor.
+1. `currentTerm += 1`, 持久化, 投自己一票並保存 votedFor.
 2. 發投票請求 (`RequestVote`), 帶上`term`, `candidateId`, `lastLogIndex` 及`lastLogTerm`. 重設隨機選舉逾時.
 3. 對同一 Term, 收到多數不同 voting servers 的票才成為 Leader.
 4. 若逾時仍未勝選, 進入新 Term 重試; 若收到同 Term 合法 Leader 的 AppendEntries, 退為 Follower.
@@ -449,7 +449,7 @@ Leader 收到拒絕後, 調整 nextIndex, 回退尋找共同前綴; 收到成功
 
 Leader 找某個 index k, 滿足:
 
--`k > commitIndex`.
+- `k > commitIndex`.
 - 多數 voting servers (包含自己) 的 matchIndex ≥ k.
 - `log[k].term == currentTerm`.
 
@@ -459,7 +459,7 @@ Leader 找某個 index k, 滿足:
 
 ### 11.6 Failure Case: 新 Leader 修補舊未提交尾端
 
-[教學補充/推導] 初始共同前綴至 index 5. Term 2 的 A 將`index6=(2,X)` 只寫在自己, 尚未到達多數, 然後與 B, C 分區.
+初始共同前綴至 index 5. Term 2 的 A 將`index6=(2,X)` 只寫在自己, 尚未到達多數, 然後與 B, C 分區.
 
 1. B, C 的最後位置均為 5, B 在 Term 3 取得自己與 C 的票, 成為 Leader.
 2. B 將`index6=(3,Y)` 複寫至 B, C, 多數且屬當前 Term, 故提交 Y.
@@ -471,7 +471,7 @@ Leader 找某個 index k, 滿足:
 
 ### 11.7 為什麼舊 Term 的"多數"還不夠?
 
-[教學補充/推導; 對照原論文 Figure 8] 五節點 S1–S5, q=3, 共同前綴到 index1:
+依原論文 Figure 8 構造以下例子: 五節點 S1–S5, q=3, 共同前綴到 index1:
 
 1. Term 2, S1 的`index2=(2,X)` 到達 S1, S2, 尚無多數, 之後 S1 離線.
 2. Term 3, S5 由 $\{S_3,S_4,S_5\}$ 選出, 在自己記下`index2=(3,Y)`, 尚未複寫至多數, 之後離線.
@@ -584,7 +584,7 @@ A Raft leader in term 4 observes that an entry from term 2 is stored on a majori
 
 ## 15. 可重跑的算例檢查
 
-[教學補充/推導] 在 Repository 根目錄執行`python tools/verify-examples.py`. 共識部分枚舉 N=3, 4, 5 的多數集合交集, 核算 $(12,Y)$ 的 Adoption, Raft 三組日誌新舊比較, 以及五節點舊 Term 反例的選票可行性. 預期有`PASS: quorum intersections; adoption; Raft freshness and old-term counterexample`.
+在 Repository 根目錄執行`python tools/verify-examples.py`. 共識部分枚舉 N=3, 4, 5 的多數集合交集, 核算 $(12,Y)$ 的 Adoption, Raft 三組日誌新舊比較, 以及五節點舊 Term 反例的選票可行性. 預期有`PASS: quorum intersections; adoption; Raft freshness and old-term counterexample`.
 
 這些檢查支持本文有限案例的算術與狀態條件, 沒有探索所有訊息交錯, 不等於完整 Paxos/Raft model checking, 實際磁碟故障測試或叢集驗收.
 
@@ -600,11 +600,11 @@ A Raft leader in term 4 observes that an entry from term 2 is stored on a majori
 
 | 來源 | 本章定位 |
 | --- | --- |
-| [延伸補充: 原文書] | van Steen, Tanenbaum, Distributed Systems, 4.03x; PDF P305–P306, P491–P506. [作者頁](https://www.distributed-systems.net/index.php/books/ds4/); 版本差異見 [教材紀錄](../reference/README.md) |
-| [原始論文] | Lamport, [Paxos Made Simple](https://lamport.azurewebsites.net/pubs/paxos-simple.pdf), 2001, §2–§3; [The Part-Time Parliament](https://lamport.azurewebsites.net/pubs/lamport-paxos.pdf), 1998, 作者提供的歷史論文 |
-| [原始論文] | Fischer, Lynch, Paterson, [Impossibility of Distributed Consensus with One Faulty Process](https://groups.csail.mit.edu/tds/papers/Lynch/jacm85.pdf), JACM 1985, pp.374–382 |
-| [原始論文] | Ongaro, Ousterhout, [In Search of an Understandable Consensus Algorithm (Extended Version) ](https://raft.github.io/raft.pdf), 2014, Figure 2, Figure 8, §5, §8 |
-| [官方文件] | [Raft 官方資源](https://raft.github.io/), [etcd v3.6 Learner 設計](https://etcd.io/docs/v3.6/learning/design-learner/), [ZooKeeper Internals](https://zookeeper.apache.org/doc/current/zookeeperInternals.html); 只引用角色與架構關係 |
-| [大學教材] | [MIT 6.5840 Lecture 6 — RSM and Raft](https://pdos.csail.mit.edu/6.824/notes/l-raft.txt), 狀態機, 選舉與正常寫入的教學順序 |
+| 延伸補充: 原文書 | van Steen, Tanenbaum, Distributed Systems, 4.03x; PDF P305–P306, P491–P506. [作者頁](https://www.distributed-systems.net/index.php/books/ds4/); 版本差異見 [教材紀錄](../reference/README.md) |
+| 原始論文 | Lamport, [Paxos Made Simple](https://lamport.azurewebsites.net/pubs/paxos-simple.pdf), 2001, §2–§3; [The Part-Time Parliament](https://lamport.azurewebsites.net/pubs/lamport-paxos.pdf), 1998, 作者提供的歷史論文 |
+| 原始論文 | Fischer, Lynch, Paterson, [Impossibility of Distributed Consensus with One Faulty Process](https://groups.csail.mit.edu/tds/papers/Lynch/jacm85.pdf), JACM 1985, pp.374–382 |
+| 原始論文 | Ongaro, Ousterhout, [In Search of an Understandable Consensus Algorithm (Extended Version) ](https://raft.github.io/raft.pdf), 2014, Figure 2, Figure 8, §5, §8 |
+| 官方文件 | [Raft 官方資源](https://raft.github.io/), [etcd v3.6 Learner 設計](https://etcd.io/docs/v3.6/learning/design-learner/), [ZooKeeper Internals](https://zookeeper.apache.org/doc/current/zookeeperInternals.html); 只引用角色與架構關係 |
+| 大學教材 | [MIT 6.5840 Lecture 6 — RSM and Raft](https://pdos.csail.mit.edu/6.824/notes/l-raft.txt), 狀態機, 選舉與正常寫入的教學順序 |
 
 線上資料查閱日期: 2026-11-19, MIT 教材於 2026-11-22 查閱. 數值時間軸是可手動檢查的教學模型, 未執行真實叢集, 效能量測或故障注入.
