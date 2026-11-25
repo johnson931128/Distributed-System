@@ -14,7 +14,7 @@ P4–P5 的課程定位是先建立理論, 再觀察實務系統如何實現機�
 
 ## 2. 用一個訂單服務看取捨
 
-> [教學補充/推導] 依 P3–P6 的原理與系統對照, 自製假設情境; 不是講義原例或實測產品.
+> 補充依據: 依 P3–P6 的原理與系統對照, 自製假設情境; 不是講義原例或實測產品.
 
 假設用戶端 (Client) 把訂單送給 A, 庫存只剩 1 件, A 可以向其他副本協調. 複寫 (Replication) 在此保存的是"嘗試扣一件"這道命令, 這樣每個副本都能用同一套庫存規則執行. 先假設副本都能正常通訊:
 
@@ -70,7 +70,7 @@ P6 是原理對應表, 不表示同一列的系統都實作相同協定. 例如 
 
 ## 4. 課程安排與評分: 忠實保留暫定性
 
-> [課程講義] P1–P2, P7–P17. 本節只記錄 PDF 上的課程政策; 不是即時課務公告.
+> 課程依據: P1–P2, P7–P17. 本節只記錄 PDF 上的課程政策; 不是即時課務公告.
 
 課程為 National Cheng Kung University, Prof. Hung-Chang Hsiao (蕭宏章), Fall 2026. P2 寫週五 09:00–12:00, 以連續 150 分鐘授課區段進行, 並允許彈性個人移動; 助教 TBA, 沒有指定必備教科書. 時段與實際授課區段照原頁記錄, 不自行補出休息規則.
 
@@ -129,7 +129,7 @@ P18 deck 封面寫 Week 2, 與上述安排不同; P6 的部分系統週次也不
 
 ## 5. 如何閱讀後續技術筆記?
 
-> [教學補充/推導] 對照 P4–P6 的"原理 → 架構 → 應用"目標.
+> 補充依據: 對照 P4–P6 的"原理 → 架構 → 應用"目標.
 
 閱讀任何協定時先固定模型: 節點是否只會 crash? 網路是否 FIFO? 哪些資料已可靠落盤? 接著列出角色, 狀態與訊息; 逐步記錄何時某個結果只是被一台接收, 何時已滿足協定決定條件, 何時應用真正執行.
 
@@ -194,8 +194,8 @@ A client times out after submitting an order. Which design most directly helps p
 | P7–P10 | 從機制, 情境與安全性出題 | Marker, 前驅 Watch, 歷史值採用 | 如何在報告中展示? |
 | P11–P17 | 報告, 暫定政策與課表 | 三類主題與週次 | P18, 事件的先後如何比較? |
 
-- [原文書/延伸補充] van Steen, Tanenbaum, 第 4 版, PDF P19–P20, P26–P27, P31–P32, 網路化系統與資源共享, 透明性及介面語義.
-- [大學教材/延伸補充] [MIT 6.5840 Lecture 1 — Introduction](https://pdos.csail.mit.edu/6.824/notes/l01.txt) 的部分故障與設計取捨, 以及 [Lecture 6 — RSM and Raft](https://pdos.csail.mit.edu/6.824/notes/l-raft.txt) 的複寫與回覆路徑.
-- [原始論文/延伸補充] [Raft Extended Version](https://raft.github.io/raft.pdf) §6–§7, 核對 Membership Change 與 Log Compaction.
+- 原文書 van Steen, Tanenbaum, 第 4 版, PDF P19–P20, P26–P27, P31–P32, 網路化系統與資源共享, 透明性及介面語義.
+- 大學教材 [MIT 6.5840 Lecture 1 — Introduction](https://pdos.csail.mit.edu/6.824/notes/l01.txt) 的部分故障與設計取捨, 以及 [Lecture 6 — RSM and Raft](https://pdos.csail.mit.edu/6.824/notes/l-raft.txt) 的複寫與回覆路徑.
+- 原始論文 [Raft Extended Version](https://raft.github.io/raft.pdf) §6–§7, 核對 Membership Change 與 Log Compaction.
 
 教材身份, 頁序與版本差異集中在 [教材紀錄](../reference/README.md); 本章課程政策只依提供的 PDF, 未宣稱核對過最新課務公告.
