@@ -16,19 +16,19 @@
 
 先把 A 的扣款, 傳送, 和 B 的接收, 入帳各視為事件 (Event). A 本地的扣款先於傳送, B 本地的接收先於入帳. 跨機器唯一用到的是傳送與接收間的順序. 以此模型記下程序 $P_i$ 的執行歷史 $H$, 一次接收和對應的原始傳送配對.
 
-**先發生關係 (Happens-before Relationship, 也常寫 Happened-before) ** 記作 $a\to b$, 是下列規則形成的最小傳遞關係:
+**先發生關係 (Happens-before Relationship, 也常寫 Happened-before)** 記作 $a\to b$, 是下列規則形成的最小傳遞關係:
 
 1. 同一程序中, a 在 b 之前執行, 則 $a\to b$.
 2. $\operatorname{send}(m)\to\operatorname{recv}(m)$.
 3. 若 $a\to b$ 且 $b\to c$, 則 $a\to c$.
 
-若既無 $a\to b$, 也無 $b\to a$, 稱為**並行事件 (Concurrent Events) **, 記作 $a\parallel b$. 這代表模型內沒有因果路徑, 不代表兩事件在實體世界同時發生, 也不保證它們寫入相同資料時不會衝突.
+若既無 $a\to b$, 也無 $b\to a$, 稱為 **並行事件 (Concurrent Events)**, 記作 $a\parallel b$. 這代表模型內沒有因果路徑, 不代表兩事件在實體世界同時發生, 也不保證它們寫入相同資料時不會衝突.
 
 例如 P1 編輯文件後傳給 P2, P2 收到後產生摘要, 編輯先於摘要; P3 在未取得文件或相關訊息前獨立修改另一份副本, 則與 P1 的編輯可能並行. 人類透過電話傳遞的資訊若未建模, 也不會出現在本系統的因果圖中.
 
 ### 2.2 實體時間還能回答什麼?
 
-**偏序 (Partial Order) ** 允許某些事件不可比較; **全序 (Total Order) ** 則要求任兩個不同事件均可排序. 為並行事件決定固定先後可便利排程, 但這個額外順序不是新發現的因果關係.
+**偏序 (Partial Order)** 允許某些事件不可比較; **全序 (Total Order)** 則要求任兩個不同事件均可排序. 為並行事件決定固定先後可便利排程, 但這個額外順序不是新發現的因果關係.
 
 實體時鐘 (Physical Clock) 回答約在何時或經過多久. 跨機比較要有已知同步誤差, 測量逾時則通常用程序可讀取的單調時鐘 (Monotonic Clock). 邏輯時鐘 (Logical Clock) 只記事件如何向前推進, 值差 10 不能解讀為 10 秒. 現在先試一個每個程序只存一個整數的版本.
 
@@ -117,7 +117,7 @@ sequenceDiagram
 
 若只保存所有歷史事件 ID, 接收者可把兩份歷史取聯集來知道因果關係, 但資訊會持續膨脹. 同一程序的事件形成前綴: 知道 P1 第 5 個事件, 就隱含知道前 4 個. 因此每個程序只需保留每個來源目前已知的最大事件序號.
 
-**向量時鐘 (Vector Clock) ** $V_i[1\ldots N]$ 中, $V_i[i]$ 是 $P_i$ 已執行的事件數; $V_i[j]$ 是 $P_i$ 已知 $P_j$ 至少執行到哪個事件. 它不是 $P_j$"當下"的即時狀態.
+**向量時鐘 (Vector Clock)** $V_i[1\ldots N]$ 中, $V_i[i]$ 是 $P_i$ 已執行的事件數; $V_i[j]$ 是 $P_i$ 已知 $P_j$ 至少執行到哪個事件. 它不是 $P_j$"當下"的即時狀態.
 
 假設程序集合固定, 身份唯一, 每一相關事件均計數, 所有因果訊息攜帶 timestamp, 且沒有未建模的共享通道. 初始皆為零向量.
 
@@ -208,7 +208,7 @@ sequenceDiagram
 
 回到轉帳例子. 若 A 已扣款, B 還沒入帳, 兩個餘額加起來少 50 元. 要解釋這份觀測, 得把 50 元記在 A→B 的通道. 全域狀態 (Global State) 因此包含各程序的本地狀態 $LS_i$ 和各有向通道的狀態 $SC_{ij}$, 合寫為 $GS=(\{LS_i\},\{SC_{ij}\})$. 傳送已納入, 接收尚未納入的轉帳指令, 是在途訊息 (In-transit Message).
 
-**截面 (Cut) ** 在每個程序選擇一個本地事件前綴. 截面內是 PAST, 之後是 FUTURE. **一致截面 (Consistent Cut) ** 必須對因果前驅封閉: 若`b` 在 Cut 內且 $a\to b$, 則 a 也必須在內.
+**截面 (Cut)** 在每個程序選擇一個本地事件前綴. 截面內是 PAST, 之後是 FUTURE. **一致截面 (Consistent Cut)** 必須對因果前驅封閉: 若`b` 在 Cut 內且 $a\to b$, 則 a 也必須在內.
 
 對一次可靠, 非重複訊息傳遞, P29 的 C1/C2 可改寫為下表:
 
@@ -250,9 +250,9 @@ Cut Z = (P1 到 b，P2 到 d)：send、recv 都已包含，合法。
 
 ### 6.1 典型版本的前提
 
-**分散式快照 (Distributed Snapshot) ** 要在正常運算繼續時, 取得一個邏輯一致的全域狀態. 典型 Chandy–Lamport 假設:
+**分散式快照 (Distributed Snapshot)** 要在正常運算繼續時, 取得一個邏輯一致的全域狀態. 典型 Chandy–Lamport 假設:
 
-- 有向 channel 可靠, **先進先出 (First-In, First-Out, FIFO) **, 傳送的訊息最終到達.
+- 有向 channel 可靠, **先進先出 (First-In, First-Out, FIFO)**, 傳送的訊息最終到達.
 - 參與節點在此次 Snapshot 期間不故障; 每個需要參與的程序均可由啟動者沿 channel 到達.
 - 本地記錄與 Marker 排序可正確執行: 記錄後, 在各 outgoing channel 上先送 Marker, 再送後續一般訊息.
 - Marker 與一般訊息遵循同一 channel 的 FIFO 順序; 不能讓控制通道任意超車資料通道.
@@ -340,7 +340,7 @@ flowchart TD
 
 P34 的重點是: 快照可對應到保留因果關係的另一種合法事件交錯, 而不一定是原始 wall-clock 執行當下曾存在的狀態. 並行事件可重排, 不可重排有因果依賴的事件.
 
-**穩定性質 (Stable Property) ** 一旦為真就不再變假, 例如在適當封閉模型內的全域終止. 若它在開始前已成立, 快照也成立; 若快照判定成立, 依可達性可推出結束時成立. 普通餘額條件可能先真後假, 不能套用同一結論. 偵測"目前沒人在運算"也不夠: 若尚有在途工作訊息, 系統未必終止.
+**穩定性質 (Stable Property)** 一旦為真就不再變假, 例如在適當封閉模型內的全域終止. 若它在開始前已成立, 快照也成立; 若快照判定成立, 依可達性可推出結束時成立. 普通餘額條件可能先真後假, 不能套用同一結論. 偵測"目前沒人在運算"也不夠: 若尚有在途工作訊息, 系統未必終止.
 
 ## 7. Checkpoint, Rollback 與 Z-Cycle
 
@@ -348,9 +348,9 @@ P34 的重點是: 快照可對應到保留因果關係的另一種合法事件�
 
 ### 7.1 快照與檢查點的差別
 
-**檢查點 (Checkpoint) ** 是保存的程序中間狀態, 供故障後重啟; $C_{i,k}$ 表示 $P_i$ 的第 k 個 checkpoint, k 只在該程序內排序. $C_{i,0}$ 為初始 checkpoint.
+**檢查點 (Checkpoint)** 是保存的程序中間狀態, 供故障後重啟; $C_{i,k}$ 表示 $P_i$ 的第 k 個 checkpoint, k 只在該程序內排序. $C_{i,0}$ 為初始 checkpoint.
 
-**回滾回復 (Rollback Recovery) ** 把程序還原到較早正確狀態, 再繼續或重播. 所有程序各選一個 checkpoint, 若包含 recv 卻沒有相應 send, 就產生**孤兒訊息 (Orphan Message) ** 所反映的不一致. 還原到記憶體快照並不會自動撤銷銀行外部付款或已寄出的 email; 外部副作用需要額外的提交與去重設計.
+**回滾回復 (Rollback Recovery)** 把程序還原到較早正確狀態, 再繼續或重播. 所有程序各選一個 checkpoint, 若包含 recv 卻沒有相應 send, 就產生 **孤兒訊息 (Orphan Message)** 所反映的不一致. 還原到記憶體快照並不會自動撤銷銀行外部付款或已寄出的 email; 外部副作用需要額外的提交與去重設計.
 
 | 面向 | Distributed Snapshot | Local Checkpoint | Consistent Global Checkpoint |
 | --- | --- | --- | --- |
@@ -387,15 +387,15 @@ C1,1 因而是此次已保存歷史中的無用 checkpoint; 未來若只新增�
 
 ### 7.3 Z-Path 的精確條件
 
-[延伸補充] **之字路徑 (Zigzag Path, Z-Path) ** 由一串訊息構成: 第一筆在起點 checkpoint 之後送出, 最後一筆在終點 checkpoint 之前收到; 相鄰訊息在中介程序的接收與下一次傳送, 位於同一或後續 checkpoint interval. 若位於同一 interval, 下一次傳送允許早於前一次接收.
+[延伸補充] **之字路徑 (Zigzag Path, Z-Path)** 由一串訊息構成: 第一筆在起點 checkpoint 之後送出, 最後一筆在終點 checkpoint 之前收到; 相鄰訊息在中介程序的接收與下一次傳送, 位於同一或後續 checkpoint interval. 若位於同一 interval, 下一次傳送允許早於前一次接收.
 
-因此 Z-Path 不一定是 Happens-before 路徑. **之字循環 (Zigzag Cycle, Z-Cycle) ** 從一個 checkpoint 出發又回到自己, 表示它無法延伸為一組一致的全域 checkpoint.
+因此 Z-Path 不一定是 Happens-before 路徑. **之字循環 (Zigzag Cycle, Z-Cycle)** 從一個 checkpoint 出發又回到自己, 表示它無法延伸為一組一致的全域 checkpoint.
 
 P37 中, 自 C1,1 後送出的 m1 到達 P2; P2 在同一 checkpoint interval 已先送出 m2, 而 m2 在 C1,1 前到達 P1. 沿 m1, m2 形成回到 C1,1 的 Z-Cycle. 這不是訊息穿越時間, 也不是因果圖中有循環; 允許同 interval 內反向銜接才是差別.
 
 ### 7.4 課程 R-Graph 與一致集合的選擇
 
-**回滾依賴圖 (Rollback-Dependency Graph, R-Graph) ** 在 P38 以 checkpoint 作頂點. 邊 $A\to B$ 表示選 B 時不能同選 A, 必須在 A 所屬程序選更晚 checkpoint. 它不是"A 故障就把 B 還原到 A"的指令.
+**回滾依賴圖 (Rollback-Dependency Graph, R-Graph)** 在 P38 以 checkpoint 作頂點. 邊 $A\to B$ 表示選 B 時不能同選 A, 必須在 A 所屬程序選更晚 checkpoint. 它不是"A 故障就把 B 還原到 A"的指令.
 
 ```mermaid
 flowchart LR
@@ -419,11 +419,11 @@ flowchart LR
 
 ### 7.5 Recovery Line 與 Domino Effect
 
-**回復線 (Recovery Line) ** 是故障條件下可恢復的一組最近一致 checkpoints. 比較"最近"須依各程序的本地順序及可用存檔, 不把所有 k 相加就當成真實時間.
+**回復線 (Recovery Line)** 是故障條件下可恢復的一組最近一致 checkpoints. 比較"最近"須依各程序的本地順序及可用存檔, 不把所有 k 相加就當成真實時間.
 
 P40 是另一個時間軸: P1 在 C1,2 之後送出 mx, P2 在 C2,2 之前收到; P1 crash 後只能還原到 C1,2, send(mx) 遺失. P2 若保留 C2,2 就成為 orphan, 因此回到 C2,1. 圖中 P3 選 C3,2; 沒有畫出其他訊息依賴, 不能憑空要求 P3 也回到 C3,1.
 
-[教學補充/推導] 以下補一個會一路回到初始狀態的 **骨牌效應 (Domino Effect) ** 完整例子:
+[教學補充/推導] 以下補一個會一路回到初始狀態的 **骨牌效應 (Domino Effect)** 完整例子:
 
 ```text
 P: C_P,0 -- send(a) -- recv(b) -- C_P,1 -- send(c) -- CRASH
@@ -495,7 +495,7 @@ For events a and b on different processes, L(a)=4 and L(b)=9. Which statement is
 - C. a and b are concurrent.
 - D. b did not happen before a.
 
-**答案: D. ** A: 數值順序不充分, 可能並行. B: 若 $b\to a$, 應有 $9<4$, 矛盾. C: 也可能 $a\to b$, 不能保證並行. D: 由 Clock Condition 的逆否命題可排除 $b\to a$.
+**答案: D.** A: 數值順序不充分, 可能並行. B: 若 $b\to a$, 應有 $9<4$, 矛盾. C: 也可能 $a\to b$, 不能保證並行. D: 由 Clock Condition 的逆否命題可排除 $b\to a$.
 
 ### Q2 — Vector comparison
 
@@ -506,7 +506,7 @@ Let X=[3,1,2] and Y=[3,2,1] be valid event vector timestamps in the same executi
 - C. X and Y are concurrent.
 - D. X and Y denote the same event.
 
-**答案: C. ** A: 第三分量 $2>1$, $X\nleq Y$. B: 第二分量 $2>1$, $Y\nleq X$. C: 兩向均不成立. D: 向量不同; 在本章完整事件模型內也不會代表同一事件.
+**答案: C.** A: 第三分量 $2>1$, $X\nleq Y$. B: 第二分量 $2>1$, $Y\nleq X$. C: 兩向均不成立. D: 向量不同; 在本章完整事件模型內也不會代表同一事件.
 
 ### Q3 — Channel state
 
@@ -517,7 +517,7 @@ A cut includes send(m) but excludes receive(m). Under reliable message delivery,
 - C. Add receive(m) to the receiver's recorded local state without changing the cut.
 - D. Declare every such cut inconsistent.
 
-**答案: B. ** A: 漏掉已傳送的訊息. B: 這正是在途訊息. C: 會改變已選本地前綴, 不能假裝 Cut 不變. D: 只要 channel state 正確, 這種截面合法.
+**答案: B.** A: 漏掉已傳送的訊息. B: 這正是在途訊息. C: 會改變已選本地前綴, 不能假裝 Cut 不變. D: 只要 channel state 正確, 這種截面合法.
 
 ### Q4 — Marker overtaking
 
@@ -528,7 +528,7 @@ A sends m before recording its local state, then sends a marker. The channel is 
 - C. A marker necessarily becomes a Byzantine vote.
 - D. The algorithm automatically retransmits every old message.
 
-**答案: A. ** A: B 首次 Marker 把 channel 設為空, m 遲到而漏記. B: Marker 不更新實體時間. C: 故障模型與投票均無關. D: 原始 Marker 規則沒有這個自動補救機制.
+**答案: A.** A: B 首次 Marker 把 channel 設為空, m 遲到而漏記. B: Marker 不更新實體時間. C: 故障模型與投票均無關. D: 原始 Marker 規則沒有這個自動補救機制.
 
 ### Q5 — Rollback
 
@@ -539,7 +539,7 @@ P rolls back to a checkpoint before sending m, while Q's selected checkpoint inc
 - C. Increase Q's Lamport clock until the inconsistency disappears.
 - D. Treat Q's receipt as proof that P's lost state is still available.
 
-**答案: B. ** A: 留下 orphan. B: 先移除孤兒接收, 再查是否引發其他依賴. C: 改 timestamp 無法補回應用狀態. D: 發生過傳送不代表其可恢復狀態仍在.
+**答案: B.** A: 留下 orphan. B: 先移除孤兒接收, 再查是否引發其他依賴. C: 改 timestamp 無法補回應用狀態. D: 發生過傳送不代表其可恢復狀態仍在.
 
 ## 11. 可重跑的算例檢查
 
