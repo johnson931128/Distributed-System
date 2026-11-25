@@ -384,7 +384,7 @@ C1,1 因而是此次已保存歷史中的無用 checkpoint; 未來若只新增�
 
 ### 7.3 Z-Path 的精確條件
 
- **之字路徑 (Zigzag Path, Z-Path)** 由一串訊息構成: 第一筆在起點 checkpoint 之後送出, 最後一筆在終點 checkpoint 之前收到; 相鄰訊息在中介程序的接收與下一次傳送, 位於同一或後續 checkpoint interval. 若位於同一 interval, 下一次傳送允許早於前一次接收.
+**之字路徑 (Zigzag Path, Z-Path)** 由一串訊息構成: 第一筆在起點 checkpoint 之後送出, 最後一筆在終點 checkpoint 之前收到; 相鄰訊息在中介程序的接收與下一次傳送, 位於同一或後續 checkpoint interval. 若位於同一 interval, 下一次傳送允許早於前一次接收.
 
 因此 Z-Path 不一定是 Happens-before 路徑. **之字循環 (Zigzag Cycle, Z-Cycle)** 從一個 checkpoint 出發又回到自己, 表示它無法延伸為一組一致的全域 checkpoint.
 
