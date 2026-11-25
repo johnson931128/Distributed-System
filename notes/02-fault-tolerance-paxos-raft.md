@@ -386,7 +386,7 @@ C 可較晚用相同前綴檢查追上。A 收到 B 的持久 ACK 後得知多�
 | `nextIndex[f]` | Leader 下次向 follower f 傳送的位置 | Leader 的 volatile state |
 | `matchIndex[f]` | 已確認 follower f 複寫到哪裡 | Leader 的 volatile state |
 
-`lastApplied ≤ commitIndex`。跟隨者擁有某個 log entry，不代表已知道它 Committed，更不代表已 Applied。
+$\mathrm{lastApplied}\le\mathrm{commitIndex}$。跟隨者擁有某個 log entry，不代表已知道它 Committed，更不代表已 Applied。
 
 ### 11.3 Leader Election 與 RequestVote
 
