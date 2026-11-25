@@ -249,7 +249,7 @@ P60 另畫 A1 已接受 $(10,X)$, P2 的新回合`Prepare(20)` 收到 A1 的歷�
 
 收到`Prepare(20)` 前, A1 的承諾為 12, 已接受 $(12,Y)$. A2 的承諾為 8, 已接受 $(8,X)$. 兩台把承諾提高到 20, 再各自回傳`Promise(20,12,Y)` 和`Promise(20,8,X)`. A3 尚未回覆.
 
-P 的 quorum 為 $\{A_1,A_2\}$. 比較歷史編號 12 與 8, 取 12 對應的 Y, 然後發 **`Accept(20,Y)`**.
+P 的 quorum 為 $\{A_1,A_2\}$. 比較歷史編號 12 與 8, 取 12 對應的 Y, 然後發 `Accept(20,Y)`.
 
 - **20**: 本輪 Proposal Number, Acceptor 將依此編號判斷是否接受.
 - **12**: 已收到的歷史 Accepted Proposal Number, 用於選值.
@@ -411,7 +411,7 @@ stateDiagram-v2
 
 圖 2.4 - 選舉逾時推進任期, 收到更高任期時退回追隨者. 自繪, 參考成大講義 P62 與 MIT 6.5840 Lecture 6. 實作可另加失去多數時主動退位的規則.
 
-接收 RequestVote 時, 不能只看誰先來. 需同時滿足: 請求 Term 不舊, 此 Term 尚未投票或已投給同候選者, 以及候選者日誌至少一樣新. 比較日誌新舊使用 **`(lastLogTerm,lastLogIndex)` 字典序**, 先比最後 entry 的 Term, 再比長度位置.
+接收 RequestVote 時, 不能只看誰先來. 需同時滿足: 請求 Term 不舊, 此 Term 尚未投票或已投給同候選者, 以及候選者日誌至少一樣新. 比較日誌新舊使用 `(lastLogTerm,lastLogIndex)` 字典序, 先比最後 entry 的 Term, 再比長度位置.
 
 | 本地最後 entry | 候選者最後 entry | 可通過日誌新舊檢查? |
 | --- | --- | --- |
@@ -451,7 +451,7 @@ Leader 找某個 index k, 滿足:
 
 -`k > commitIndex`.
 - 多數 voting servers (包含自己) 的 matchIndex ≥ k.
-- **`log[k].term == currentTerm`**.
+- `log[k].term == currentTerm`.
 
 滿足時可將 commitIndex 推至 k; 它之前的連續前綴也隨之提交. 當前任期以外的 entry 不能只靠"現在看起來在多數"直接套用同樣計票規則; 應讓當前任期 entry 提交後間接涵蓋.
 
