@@ -91,7 +91,7 @@ sequenceDiagram
 
 ### 3.2 每輪有多少人仍缺更新? Push 與 Pull 的完整推導
 
-> 課程依據: P99 (Push/Pull 定義), P100 (Push convergence), P101 (Pull convergence). 以下用 $N=10$ 的數字把講義各步連起來; 數值例子與條件期望的說明屬 教學推導.
+> 課程依據: P99 (Push/Pull 定義), P100 (Push convergence), P101 (Pull convergence). 以下用 $N=10$ 的數字把講義各步連起來; 數值例子與條件期望的說明為自行推導.
 
 #### 模型與符號: 如何計算 Infective 數量?
 
@@ -566,7 +566,7 @@ P115 用 Web 1.0/2.0/3.0 描述 Read-only, Read-write 與區塊鏈相關應用�
 
 ### 11.1 Blockchain 與 IPFS 之間靠什麼連接?
 
-> 補充依據: 依 P116 的分層架構延伸; IPFS 實作參考官方文件 [Content Identifiers](https://docs.ipfs.tech/concepts/content-addressing/), [Distributed Hash Tables](https://docs.ipfs.tech/concepts/dht/), [How IPFS works](https://docs.ipfs.tech/concepts/how-ipfs-works/), [Pin files](https://docs.ipfs.tech/how-to/pin-files/) (2026-11-25 核對).
+> 補充依據: P116 的分層架構延伸; IPFS 實作參考官方文件 [Content Identifiers](https://docs.ipfs.tech/concepts/content-addressing/), [Distributed Hash Tables](https://docs.ipfs.tech/concepts/dht/), [How IPFS works](https://docs.ipfs.tech/concepts/how-ipfs-works/), [Pin files](https://docs.ipfs.tech/how-to/pin-files/) (2026-11-25 核對).
 
 假設遊戲交易平台管理一把武器的持有者及其 100 MB 的 3D 模型`weapon.obj`. 持有者是需要共同驗證的紀錄, 適合放在區塊鏈 (On-chain); 模型內容很大, 則可放在 IPFS (InterPlanetary File System, 星際檔案系統) 等鏈下 (Off-chain) 網路. **兩套系統之間的連結是 CID, 而不是固定伺服器的 IP 位址.**
 
