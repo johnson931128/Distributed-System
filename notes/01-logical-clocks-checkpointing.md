@@ -194,11 +194,9 @@ sequenceDiagram
 
 ### 4.4 真實用途與限制
 
-[延伸補充] 原文書 §5.2.2 用因果歷史解釋向量. 工程上可讓兩份資料版本攜帶向量, 判定一份是否涵蓋另一份的更新; 若並行, 應交給合併規則或使用者解衝突. 向量只能指出並行, 不能替應用選出"正確內容". P12 將 Amazon Dynamo 的 Vector Clocks 列為報告方向; 此處不把所有 Dynamo 系統或現行產品概括為採用同一版本機制.
+[延伸補充] 原文書 §5.2.2 用因果歷史解釋向量, P12 則將 Amazon Dynamo 的 Vector Clocks 列為報告方向. 以下用物件版本說明實際用途.
 
-網路分區時, 各側仍能產生自己的事件, 合併時會保留並行資訊; 但這不等於完成 Consensus, 也不會保證所有副本即時相同.
-
-[原始論文/延伸補充] [Dynamo: Amazon's Highly Available Key-value Store](https://cdn.amazon.science/ac/1d/eb50c4064c538c8ac440ce6a1d91/dynamo-amazons-highly-available-key-value-store.pdf) (2007), §4.4 使用 Vector Clock 追蹤物件版本因果: 可比較時捨棄被涵蓋的舊版本; 無法比較時保留分歧, 由應用進行語義合併. 自製例: 共同版本 $[1,0]$ 之後, 兩側分別更新為 $[2,0]$, $[1,1]$, 兩者並行, 不能只因第一分量 2 較大就覆蓋另一份. 這是該論文的版本管理設計, 不等同宣稱現行 DynamoDB 仍以相同外部介面暴露此機制.
+[原始論文/延伸補充] [Dynamo: Amazon's Highly Available Key-value Store](https://cdn.amazon.science/ac/1d/eb50c4064c538c8ac440ce6a1d91/dynamo-amazons-highly-available-key-value-store.pdf) (2007), §4.4 使用 Vector Clock 追蹤物件版本因果: 可比較時捨棄被涵蓋的舊版本; 無法比較時保留分歧, 由應用進行語義合併. 自製例: 共同版本 $[1,0]$ 之後, 兩側分別更新為 $[2,0]$, $[1,1]$, 兩者並行, 不能只因第一分量 2 較大就覆蓋另一份. 向量只能辨認並行, 不能替應用選出正確內容; 網路分區後保留分歧也不等於完成 Consensus. 這是該論文的版本管理設計, 不等同宣稱現行 DynamoDB 仍以相同外部介面暴露此機制.
 
 ## 5. Global State 與 Consistent Cut
 
@@ -254,8 +252,7 @@ Cut Z = (P1 到 b，P2 到 d)：send、recv 都已包含，合法。
 
 - 有向 channel 可靠, **先進先出 (First-In, First-Out, FIFO)**, 傳送的訊息最終到達.
 - 參與節點在此次 Snapshot 期間不故障; 每個需要參與的程序均可由啟動者沿 channel 到達.
-- 本地記錄與 Marker 排序可正確執行: 記錄後, 在各 outgoing channel 上先送 Marker, 再送後續一般訊息.
-- Marker 與一般訊息遵循同一 channel 的 FIFO 順序; 不能讓控制通道任意超車資料通道.
+- 本地記錄與 Marker 傳送能遵守 §6.3 的順序, 且 Marker 和一般訊息使用同一 FIFO 順序; 控制訊息不能任意超車.
 
 Snapshot 不要求全域暫停. 只有本地記錄與發 Marker 的必要順序需要原子性或適當同步; 不是把所有業務一直凍結到快照完成.
 
@@ -470,8 +467,6 @@ Message Logging 不只是把訊息 payload 寫檔. 若程序會讀取隨機數, 
 
 實際設計可問三個可檢查問題: checkpoint 是否已可靠完成? 回復所需的 channel/log 是否仍存在? 重播的外部副作用能否去重? 這些問題比"有備份所以容錯"更接近可實作的保證.
 
-本章的 Snapshot/Checkpoint 也不等於下一章 Consensus 的 Replicated Log: 前者在既有執行上找一致回復邊界, 後者在執行之前先決定命令順序. 兩者可結合, 例如把已套用的日誌前綴壓成應用快照, 但需額外記錄前綴位置與恢復規則.
-
 ### 8.1 實際系統: Flink 的 Barrier 與重播
 
 [官方文件/延伸補充] [Apache Flink 2.1 Stateful Stream Processing](https://nightlies.apache.org/flink/flink-docs-release-2.1/docs/concepts/stateful-stream-processing/) 以分散式快照與來源重播支援回復. Source 將 checkpoint barrier 插入串流, Operator 依 barrier 界定狀態; aligned checkpoint 在多輸入間對齊邊界, unaligned checkpoint 則記錄在途資料, 以降低背壓時等待 barrier 的成本. 它借用 Chandy–Lamport 的一致邊界思想, 但配合 dataflow 與可重播來源設計, 不能直接把所有模式當成第 6 節的原始 Marker 協定.
@@ -480,7 +475,7 @@ Message Logging 不只是把訊息 payload 寫檔. 若程序會讀取隨機數, 
 
 ## 9. 從重建歷史到決定命令順序
 
-在轉帳案例裡, 時鐘讓我們找出可能影響入帳的事件, 快照讓我們知道 50 元還在哪裡, 檢查點則讓我們選擇可以重新開始的位置. 若接下來兩台伺服器同時收到互斥的提款要求, 這些工具可以檢查它們看到了什麼, 但服務還要讓它們採用同一個執行順序. 這就是 [Chapter 02 的共識問題](02-fault-tolerance-paxos-raft.md).
+在轉帳案例裡, 時鐘讓我們找出可能影響入帳的事件, 快照讓我們知道 50 元還在哪裡, 檢查點則讓我們選擇可以重新開始的位置. 若接下來兩台伺服器同時收到互斥的提款要求, 這些工具可以檢查它們看到了什麼, 但服務還要讓它們採用同一個執行順序. 這就是 [Chapter 02 的共識問題](02-fault-tolerance-paxos-raft.md). Snapshot/Checkpoint 在既有執行上找一致回復邊界, Consensus 則在執行前決定命令順序. 兩者可結合, 例如把已套用的日誌前綴壓成快照, 並額外記錄前綴位置與恢復規則.
 
 ## 10. 英文選擇題與逐項解析
 
