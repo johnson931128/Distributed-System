@@ -2,7 +2,7 @@
 
 ## 1. 從一個檔案請求看懂 P2P 與 Overlay
 
-> [課程講義] P90–P94: 從伺服器叢集走向動態, 分散的 peers.
+> 課程依據: P90–P94: 從伺服器叢集走向動態, 分散的 peers.
 
 假設同學都要下載同一份課程映像檔. 若每人都找同一台伺服器, 來源得送出每一份檔案. 若先下載的同學也能上傳, 一部分傳輸工作便移交給參與者. 這是對等運算 (Peer-to-Peer Computing, P2P) 的出發點. 講義 P93 的 SETI@home 把類似的資源分工用在邊緣運算, 工作分配仍可保有中央角色. 接下來的問題是, A 知道檔案的名稱或識別鍵, 卻不知道誰有檔案, 第一個封包要送給誰?
 
@@ -27,7 +27,7 @@ IP 路由 (IP Routing) 拿到的是目的 IP, 依轉送表把封包交給下一�
 
 ## 2. 從 Multicast, Napster 到 Gnutella
 
-> [課程講義] P95–P97; 演算與拓樸例子為自製.
+> 課程依據: P95–P97; 演算與拓樸例子為自製.
 
 ### 2.1 End System Multicast 的資料路徑
 
@@ -61,7 +61,7 @@ TTL=1 只看到 B, C, E 有檔案也可能找不到. 這是有限搜尋範圍的
 
 ## 3. Gossip, Anti-entropy 與收斂條件
 
-> [課程講義] P98–P103. 延伸: [Demers 等, Epidemic Algorithms for Replicated Database Maintenance](https://www.cs.cornell.edu/courses/cs614/2004sp/papers/p1-demers.pdf), §1–§2.
+> 課程依據: P98–P103. 延伸: [Demers 等, Epidemic Algorithms for Replicated Database Maintenance](https://www.cs.cornell.edu/courses/cs614/2004sp/papers/p1-demers.pdf), §1–§2.
 
 新版映像檔發布後, A 可以先通知 B. 下一輪 A 聯絡 C, 已取得更新的 B 同時聯絡 D. 新增的持有者也能分擔下一輪的傳播工作. 這種流行病式傳播 (Epidemic Dissemination) 把已知更新者稱為 infective, 還缺更新者稱為 susceptible. 對等節點隨機聯絡少量同伴的方式稱為 Gossip.
 
@@ -91,7 +91,7 @@ sequenceDiagram
 
 ### 3.2 每輪有多少人仍缺更新? Push 與 Pull 的完整推導
 
-> [課程講義] P99 (Push/Pull 定義), P100 (Push convergence), P101 (Pull convergence). 以下用 $N=10$ 的數字把講義各步連起來; 數值例子與條件期望的說明屬 [教學補充/推導].
+> 課程依據: P99 (Push/Pull 定義), P100 (Push convergence), P101 (Pull convergence). 以下用 $N=10$ 的數字把講義各步連起來; 數值例子與條件期望的說明屬 教學推導.
 
 #### 模型與符號: 如何計算 Infective 數量?
 
@@ -268,7 +268,7 @@ P103 的圖以輪數比較收斂; 下表依教材遞迴, 用相同 $p_0=0.9$ 核
 
 ### 3.4 一個完整六節點傳播交錯
 
-[教學補充/推導] A 起初知道更新 u, 其他 B–F 不知道; 每輪只讓輪初 infective 主動 Push:
+A 起初知道更新 u, 其他 B–F 不知道; 每輪只讓輪初 infective 主動 Push:
 
 | round | 指定的抽樣結果 | 輪末知道 u 的集合 |
 | --- | --- | --- |
@@ -289,7 +289,7 @@ P98 的"所有活節點終將收到", 要有可達通路, 持續公平抽樣及�
 
 ## 4. DHT: 把查找問題放進可維護的座標空間
 
-> [課程講義] P104–P105; 延伸: [Chord 原論文](https://pdos.csail.mit.edu/papers/chord%3Asigcomm01/chord_sigcomm.pdf), §4.
+> 課程依據: P104–P105; 延伸: [Chord 原論文](https://pdos.csail.mit.edu/papers/chord%3Asigcomm01/chord_sigcomm.pdf), §4.
 
 反熵回答"誰還缺更新", 但 A 下次要找一個指定的 block, 仍需要能從 key 直接推進的查找規則. 分散式雜湊表 (Distributed Hash Table, DHT) 先把識別鍵 (Key) 映到共同的邏輯空間, 再按區域或區間指派責任節點 (Owner). 本來任意相連的 Peer 現在維護特定鄰居, 因此中途的 B 即使沒存這個 block, 也能指向更接近目標的位置.
 
@@ -301,13 +301,13 @@ API 分層必須清楚: Chord 本身主要提供`lookup(key)` 找節點; block s
 
 ## 5. CAN: 座標區域, 加入與資料遷移
 
-> [課程講義] P106. 延伸: [Ratnasamy 等, A Scalable Content-Addressable Network](https://www.gsd.inesc-id.pt/~ler/docencia/srsdI/p13-ratnasamy.pdf), SIGCOMM 2001, §2; 以發表論文補充, 不是同名 2002 博士論文.
+> 課程依據: P106. 延伸: [Ratnasamy 等, A Scalable Content-Addressable Network](https://www.gsd.inesc-id.pt/~ler/docencia/srsdI/p13-ratnasamy.pdf), SIGCOMM 2001, §2; 以發表論文補充, 不是同名 2002 博士論文.
 
 **內容定址網路 (Content-Addressable Network, CAN)** 把邏輯 d 維空間分成 zones, 每個 peer 負責其中一塊. 原始模型為 d-torus, 邊界環繞; 這是虛擬座標, 不是地理位置. Neighbor zones 在一維接壤, 其餘維度範圍重疊, 光碰到角落不一定算鄰居.
 
 ### 5.1 用區域切分交接檔案鍵
 
-[教學補充/推導] 用 $[0,1)\times[0,1)$, 半開區間避免邊界同時屬於兩人. 初始四份區域:
+用 $[0,1)\times[0,1)$, 半開區間避免邊界同時屬於兩人. 初始四份區域:
 
 | Peer | x 範圍 | y 範圍 |
 | --- | --- | --- |
@@ -316,7 +316,7 @@ API 分層必須清楚: Chord 本身主要提供`lookup(key)` 找節點; block s
 | C | $[0,0.5)$ | $[0.5,1)$ |
 | D | $[0.5,1)$ | $[0.5,1)$ |
 
-在 J 加入以前, $\operatorname{hash}(K)=(0.8,0.6)$ 屬於 D. 現在讓 J 加入右上角. 觀察同一個 key 為何要換 owner, 以及既有資料什麼時候才跟上:
+在 J 加入以前, $\mathrm{hash}(K)=(0.8,0.6)$ 屬於 D. 現在讓 J 加入右上角. 觀察同一個 key 為何要換 owner, 以及既有資料什麼時候才跟上:
 
 ```text
 y                       x = 0       0.5     0.75      1
@@ -334,7 +334,7 @@ y                       x = 0       0.5     0.75      1
 2. 請求經 CAN 路由到該點的 owner D; bootstrap 只是入口, 不應成為所有資料的唯一轉送中心.
 3. D 沿 x 切分: 保留 $[0.5,0.75)\times[0.5,1)$, J 接手 $[0.75,1)\times[0.5,1)$.
 4. 更新 D, J 與相鄰 peers 的 routing state, 將落在 J 區域的既有資料交接.
-5. 發布 $(K,V)$, 假設 $\operatorname{hash}(K)=(0.8,0.6)$, 應找到 J, 並由儲存層將資料保存在 J 的責任區域. 之後 get(K) 用同一映射取回.
+5. 發布 $(K,V)$, 假設 $\mathrm{hash}(K)=(0.8,0.6)$, 應找到 J, 並由儲存層將資料保存在 J 的責任區域. 之後 get(K) 用同一映射取回.
 
 ```mermaid
 sequenceDiagram
@@ -362,7 +362,7 @@ sequenceDiagram
 
 ## 6. Chord: Ring, Finger Table 與完整 Lookup
 
-> [課程講義] P107. 延伸: Stoica 等, Chord, §4–§5.
+> 課程依據: P107. 延伸: Stoica 等, Chord, §4–§5.
 
 ### 6.1 ID, Owner 與環繞區間
 
@@ -391,7 +391,7 @@ key=32 由 N32 負責; key=42 由 N45 負責, 不能因 42 距離 32 較近就�
 
 ### 6.2 用捷徑跳過中間節點
 
-如果 N0 只認得下一個節點, 找 42 得一路經過 N10, N20, N32 才能判斷 N45 是 owner. Chord 讓 N0 多記一些遠近不同的聯絡人. 捷徑表 (Finger Table) 第 i 項 (本章 $i=0,\ldots,m-1$) 為 $\operatorname{successor}((\mathrm{nodeID}+2^i)\bmod 2^m)$. 先沿環算出起點 (Finger Start), 再找起點的後繼. N32 的 offset 8 先得到 40, 環上第一個不小於 40 的節點是 N45, 故該欄存 N45.
+如果 N0 只認得下一個節點, 找 42 得一路經過 N10, N20, N32 才能判斷 N45 是 owner. Chord 讓 N0 多記一些遠近不同的聯絡人. 捷徑表 (Finger Table) 第 i 項 (本章 $i=0,\ldots,m-1$) 為 $\mathrm{successor}((\mathrm{nodeID}+2^i)\bmod 2^m)$. 先沿環算出起點 (Finger Start), 再找起點的後繼. N32 的 offset 8 先得到 40, 環上第一個不小於 40 的節點是 N45, 故該欄存 N45.
 
 | offset | N0 的 start → finger | N32 的 start → finger |
 | --- | --- | --- |
@@ -443,13 +443,13 @@ P107 的"Jump 8"可用來理解 finger start=40 的方向, 但 start 40 的 fing
 
 ## 7. Chord Join, Stabilize 與故障修補
 
-> [課程講義] P108–P109. 原始流程參考 Chord §5, Figure 7; 正確性界線另參考 [Zave, How to Make Chord Correct](https://www.pamelazave.com/TSE_Chord_final.pdf) 及[作者的勘誤頁](https://www.pamelazave.com/chord.html).
+> 課程依據: P108–P109. 原始流程參考 Chord §5, Figure 7; 正確性界線另參考 [Zave, How to Make Chord Correct](https://www.pamelazave.com/TSE_Chord_final.pdf) 及[作者的勘誤頁](https://www.pamelazave.com/chord.html).
 
 ### 7.1 P108–P109 的單一加入完整例子
 
 先假設 N10→N20 的局部關係正確, N20.predecessor=N10, 沒有其他同時加入或故障. N15 要插入其間:
 
-1. N15 經 bootstrap 查到 $\operatorname{successor}(15)=N_{20}$, 令自己的 successor=N20; N10 此時仍指 N20.
+1. N15 經 bootstrap 查到 $\mathrm{successor}(15)=N_{20}$, 令自己的 successor=N20; N10 此時仍指 N20.
 2. N15 通知 N20. 因 15 在 $(10,20)$, N20 將 predecessor 更新為 N15.
 3. N10 執行 stabilize, 問 N20: "你的 predecessor 是誰? "得到 N15.
 4. N10 驗證 15 在 $(10,20)$, 改 successor=N15, 並 notify N15.
@@ -487,7 +487,7 @@ P109 的三階段圖說明單一加入可經週期通知接上, 不是任意環�
 
 ## 8. CFS: 檔案, DHash 與 Chord 的分層
 
-> [課程講義] P110–P111. 延伸: [Dabek 等, Wide-area cooperative storage with CFS](https://pdos.csail.mit.edu/papers/cfs%3Asosp01/cfs_sosp.pdf), §3–§5.
+> 課程依據: P110–P111. 延伸: [Dabek 等, Wide-area cooperative storage with CFS](https://pdos.csail.mit.edu/papers/cfs%3Asosp01/cfs_sosp.pdf), §3–§5.
 
 現在可以回到開頭的課程映像檔. 應用想開啟一個路徑, Chord 卻只認得 key. 合作式檔案系統 (Cooperative File System, CFS) 先把路徑拆成目錄與索引節點 (Inode) 等中繼資料的查找, 再由分散式區塊儲存層 (DHash) 用內容雜湊逐塊取得映像檔. 每塊落在哪些節點, 才交由 Chord 提供的定位能力決定.
 
@@ -503,7 +503,7 @@ flowchart TD
 
 ### 8.1 發布與讀取的完整資料路徑
 
-[教學補充/推導] Publisher 有檔案 F, 切成 B1, B2, B3, 計算 $k_1=H(B_1)$, $k_2=H(B_2)$, $k_3=H(B_3)$.
+Publisher 有檔案 F, 切成 B1, B2, B3, 計算 $k_1=H(B_1)$, $k_2=H(B_2)$, $k_3=H(B_3)$.
 
 1. 建立 inode/目錄等 metadata blocks, 內容包含下層 block IDs; 它們也可用內容雜湊定址.
 2. 經 DHash put 各 block, 透過 Chord 找責任節點; 儲存層維持副本與快取, 避免唯一 owner 一故障就讀不到.
@@ -521,7 +521,7 @@ CFS 原論文也討論資料保留期與續存; 不能把"存入 P2P"理解為�
 
 ## 9. Paxos 可以放在哪裡? Routing 與資料一致性分開
 
-> [課程講義] P112–P113. 技術補充: 這是可變資料層的設計延伸, 並非原始唯讀 CFS 必備路徑.
+> 課程依據: P112–P113. 技術補充: 這是可變資料層的設計延伸, 並非原始唯讀 CFS 必備路徑.
 
 P112 用"某 key 的 successors 組成 Paxos Quorum"說明: 拓樸路由可以允許暫時不一致, 某些應用更新卻要求共同順序. 自製例子: key42 的儲存群體固定為 N45, N55, N0; 要更新其可變根指標, 三個副本可用 q=2 的共識決定一個版本/命令.
 
@@ -536,7 +536,7 @@ P113 將 mutable state across untrusted nodes 與 quorum 並列; 技術上標準
 
 ## 10. Overlay 的效能, Sybil 與 Eclipse
 
-> [課程講義] P113–P114. 延伸: [Douceur, The Sybil Attack](https://www.microsoft.com/en-us/research/wp-content/uploads/2002/01/IPTPS2002.pdf), 2002.
+> 課程依據: P113–P114. 延伸: [Douceur, The Sybil Attack](https://www.microsoft.com/en-us/research/wp-content/uploads/2002/01/IPTPS2002.pdf), 2002.
 
 **多重假身份攻擊 (Sybil Attack)** 是一個實體建立多個邏輯身份, 讓"不同節點"不再代表獨立控制者. **日蝕攻擊 (Eclipse Attack)** 則使受害者可接觸的 routing/neighbor view 被攻擊者包圍, 查詢與更新受其控制. 大量 Sybil IDs 可以協助達成 Eclipse, 但兩者不是同義詞.
 
@@ -553,7 +553,7 @@ P113 將 mutable state across untrusted nodes 與 quorum 並列; 技術上標準
 
 ## 11. Web3 堆疊: 把路由, 儲存與信任分開看
 
-> [課程講義] P115–P116; 官方補充: [IPFS Content Identifiers](https://docs.ipfs.tech/concepts/content-addressing/), [Pin files](https://docs.ipfs.tech/how-to/pin-files/), 查詢日期 2026-11-20.
+> 課程依據: P115–P116; 官方補充: [IPFS Content Identifiers](https://docs.ipfs.tech/concepts/content-addressing/), [Pin files](https://docs.ipfs.tech/how-to/pin-files/), 查詢日期 2026-11-20.
 
 P115 用 Web 1.0/2.0/3.0 描述 Read-only, Read-write 與區塊鏈相關應用的演進; 這是課程框架, 不是各年代所有網站能力的嚴格分類, 也不能從"Trustless"推得無需任何信任假設.
 
@@ -566,7 +566,7 @@ P115 用 Web 1.0/2.0/3.0 描述 Read-only, Read-write 與區塊鏈相關應用�
 
 ### 11.1 Blockchain 與 IPFS 之間靠什麼連接?
 
-> [教學補充/推導] 依 P116 的分層架構延伸; IPFS 實作參考官方文件 [Content Identifiers](https://docs.ipfs.tech/concepts/content-addressing/), [Distributed Hash Tables](https://docs.ipfs.tech/concepts/dht/), [How IPFS works](https://docs.ipfs.tech/concepts/how-ipfs-works/), [Pin files](https://docs.ipfs.tech/how-to/pin-files/) (2026-11-25 核對).
+> 補充依據: 依 P116 的分層架構延伸; IPFS 實作參考官方文件 [Content Identifiers](https://docs.ipfs.tech/concepts/content-addressing/), [Distributed Hash Tables](https://docs.ipfs.tech/concepts/dht/), [How IPFS works](https://docs.ipfs.tech/concepts/how-ipfs-works/), [Pin files](https://docs.ipfs.tech/how-to/pin-files/) (2026-11-25 核對).
 
 假設遊戲交易平台管理一把武器的持有者及其 100 MB 的 3D 模型`weapon.obj`. 持有者是需要共同驗證的紀錄, 適合放在區塊鏈 (On-chain); 模型內容很大, 則可放在 IPFS (InterPlanetary File System, 星際檔案系統) 等鏈下 (Off-chain) 網路. **兩套系統之間的連結是 CID, 而不是固定伺服器的 IP 位址.**
 
@@ -712,14 +712,14 @@ Which assignment of responsibilities matches the original CFS architecture?
 
 延伸資料 (查閱日期 2026-11-20):
 
-- [原文書] van Steen, Tanenbaum, 第 4 版, PDF P106–P109 (結構化與非結構化覆疊), P248–P250 (應用層多播), P256–P257 (Gossip), P349–P352 (DHT).
+- 原文書 van Steen, Tanenbaum, 第 4 版, PDF P106–P109 (結構化與非結構化覆疊), P248–P250 (應用層多播), P256–P257 (Gossip), P349–P352 (DHT).
 
-- [原始論文] Demers 等, 1987, [Epidemic Algorithms for Replicated Database Maintenance](https://www.cs.cornell.edu/courses/cs614/2004sp/papers/p1-demers.pdf), §1–§2: 反熵, rumor, 傳播成本與刪除.
-- [原始論文] Ratnasamy 等, 2001, [A Scalable Content-Addressable Network](https://www.gsd.inesc-id.pt/~ler/docencia/srsdI/p13-ratnasamy.pdf), §2: torus, routing, join 與維護; 研究機構保存的發表論文.
-- [原始論文] Stoica 等, 2001, [Chord: A Scalable Peer-to-peer Lookup Service for Internet Applications](https://pdos.csail.mit.edu/papers/chord%3Asigcomm01/chord_sigcomm.pdf), §4–§5: mapping, finger, join 與 successor 維護.
-- [原始論文] Dabek 等, 2001, [Wide-area cooperative storage with CFS](https://pdos.csail.mit.edu/papers/cfs%3Asosp01/cfs_sosp.pdf), §3–§5: 唯讀檔案, DHash, 簽署 root, 複寫與快取.
-- [原始論文] Zave, 2017, [Reasoning about Identifier Spaces: How to Make Chord Correct](https://www.pamelazave.com/TSE_Chord_final.pdf); [作者頁與勘誤](https://www.pamelazave.com/chord.html). 本章僅用來限定原始 maintenance 的正確性宣稱, 未重現其完整證明.
-- [原始論文] Douceur, 2002, [The Sybil Attack](https://www.microsoft.com/en-us/research/wp-content/uploads/2002/01/IPTPS2002.pdf): 多個身份不等於多個獨立實體.
-- [官方文件] [IPFS CIDs](https://docs.ipfs.tech/concepts/content-addressing/), [Pin files](https://docs.ipfs.tech/how-to/pin-files/): 內容驗證與保存責任.
+- 原始論文 Demers 等, 1987, [Epidemic Algorithms for Replicated Database Maintenance](https://www.cs.cornell.edu/courses/cs614/2004sp/papers/p1-demers.pdf), §1–§2: 反熵, rumor, 傳播成本與刪除.
+- 原始論文 Ratnasamy 等, 2001, [A Scalable Content-Addressable Network](https://www.gsd.inesc-id.pt/~ler/docencia/srsdI/p13-ratnasamy.pdf), §2: torus, routing, join 與維護; 研究機構保存的發表論文.
+- 原始論文 Stoica 等, 2001, [Chord: A Scalable Peer-to-peer Lookup Service for Internet Applications](https://pdos.csail.mit.edu/papers/chord%3Asigcomm01/chord_sigcomm.pdf), §4–§5: mapping, finger, join 與 successor 維護.
+- 原始論文 Dabek 等, 2001, [Wide-area cooperative storage with CFS](https://pdos.csail.mit.edu/papers/cfs%3Asosp01/cfs_sosp.pdf), §3–§5: 唯讀檔案, DHash, 簽署 root, 複寫與快取.
+- 原始論文 Zave, 2017, [Reasoning about Identifier Spaces: How to Make Chord Correct](https://www.pamelazave.com/TSE_Chord_final.pdf); [作者頁與勘誤](https://www.pamelazave.com/chord.html). 本章僅用來限定原始 maintenance 的正確性宣稱, 未重現其完整證明.
+- 原始論文 Douceur, 2002, [The Sybil Attack](https://www.microsoft.com/en-us/research/wp-content/uploads/2002/01/IPTPS2002.pdf): 多個身份不等於多個獨立實體.
+- 官方文件 [IPFS CIDs](https://docs.ipfs.tech/concepts/content-addressing/), [Pin files](https://docs.ipfs.tech/how-to/pin-files/): 內容驗證與保存責任.
 
 本文數值表, CAN 分裂, Chord 路徑與英文題均為自製或明確沿用講義設定; 圖為原創 Mermaid.`python tools/verify-coordination-p2p.py` 可核算有限案例; 未部署真實 CAN/Chord/Gossip 網路, 也未以模擬通過宣稱所有 churn 排程或真實效能已驗證.
