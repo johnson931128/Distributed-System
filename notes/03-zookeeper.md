@@ -28,7 +28,7 @@ flowchart LR
 
 Worker 連到 F1 後就能讀`/app/config`, F1 直接用自己已套用的狀態答覆, 因此省去每次讀取的多數往返. 管理者若向同一台 F1 寫入, 請求則得經過領導者 (Leader) 排序, 再由足夠副本持久保存. 這條路有更多網路與磁碟成本, 也使 F1 和 F2 的讀取進度可能短暫不同.
 
-設定變動不頻繁時, Worker 可以在讀取時登記監看通知 (Watch). 收到通知便重新讀取, 平常不必一直輪詢. 這把應用等待設定變動的工作留給 Client, 寫入端仍可繼續處理其他請求.
+設定變動不頻繁時, Worker 可透過監看通知 (Watch) 減少輪詢; 完整通知與重讀流程見 §6.
 
 P71–P72 的讀寫比例, microsecond latency, P88 的讀取吞吐成長描述, 應理解為設計動機. 本文沒有測量 latency, 也不將"資料樹在 RAM"解釋為更新無需磁碟. 成功更新仍需要協定要求的持久化.
 
@@ -54,7 +54,7 @@ P71–P72 的讀寫比例, microsecond latency, P88 的讀取吞吐成長描述,
 
 如果兩次設定更新同時到達 F1 和 F2, 所有副本得依同一順序套用. ZooKeeper 原子廣播 (ZooKeeper Atomic Broadcast, ZAB) 讓一個已啟用的 Leader 排序各筆更新, 副本再依此維護共同前綴. Leader 會把領導世代 (Epoch) 和本世代內的計數編成交易識別碼 (ZooKeeper Transaction ID, zxid), 高, 低各 32 bits.
 
-本章以`(7,41)` 表示 epoch 7 的第 41 個交易計數. 這個編號不是 znode 的`version`, 也不是 lock node 名稱的 sequential suffix; 三者作用不同.
+本章以 `(7,41)` 表示 epoch 7 的第 41 個交易計數. 它與 znode 的 version 及鎖請求序號的差異見 §4.2.
 
 Leader activation 的目標是先建立可延續既有決定的合法歷史, 再接受新工作. P76 將其濃縮成"選舉與同步"; 不能實作成誰先 timeout 就直接把自己那份較短資料覆蓋其他副本.
 
@@ -137,9 +137,7 @@ P77 的"Simplified Two-Phase Commit"是 proposal/ACK/commit 的教學類比, 不
 
 查找時, `exists(path,watch)` 會檢查存在與 Stat, 並可對尚不存在的路徑設 Watch.`getData(path,watch)` 用來取得現有節點的資料與 Stat, 回 NoNode 時沒有成功設置資料 Watch.`getChildren(path,watch)` 則監看子節點集合, 父節點下某個子節點只更新自己的資料, 不會因此改變清單. 列出的名稱也須自行依鎖的序號排序.
 
-更新時, `setData(path,data,version)` 用版本保護並行修改, 遇到 BadVersion 要重讀再決定. 讀取前若需要呼叫`sync(path)`, 非同步介面應等 callback, 具體保證見第 9 節.
-
-`version=-1` 常用來省略版本檢查, 不代表"只接受最新版". 若要避免覆蓋並行更新, 應傳自己讀到的 version.
+更新時, `setData(path,data,version)` 的版本保護見 §4.2; `version=-1` 表示省略版本檢查, 不代表只接受最新版. 讀取前若需要呼叫 `sync(path)`, 具體保證與非同步 callback 的要求見 §9.
 
 ## 5. Session, 斷線與 Ephemeral 的時間軸
 
@@ -269,7 +267,7 @@ release:
     delete myNode
 ```
 
-P84 的最後"go to step 2"要同時涵蓋前驅查詢已不存在的情況.`getChildren` 與`exists` 之間不是原子區段; `exists` 的結果與 Watch 註冊則用來封住漏通知的競爭.
+P84 的最後一步 go to step 2 必須涵蓋前驅已不存在的情況; §8.3 展示 `getChildren` 與 `exists` 之間的競爭.
 
 ### 8.3 競爭與失敗時間軸
 
