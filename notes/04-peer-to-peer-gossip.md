@@ -31,7 +31,7 @@ IP 路由 (IP Routing) 拿到的是目的 IP, 依轉送表把封包交給下一�
 
 ### 2.1 End System Multicast 的資料路徑
 
-**端系統多播 (End System Multicast, ESM) ** 又屬**應用層多播 (Application-Layer Multicast, ALM) **: 由 peers 複製並轉送串流, 不要求所有跨 ISP routers 提供同一套 IP multicast 支援.
+**端系統多播 (End System Multicast, ESM)** 又屬 **應用層多播 (Application-Layer Multicast, ALM)**: 由 peers 複製並轉送串流, 不要求所有跨 ISP routers 提供同一套 IP multicast 支援.
 
 假設 S 把一份影片資料送 A, B, A 再送 C, D. S 只維持兩份上行流量, 但 A 必須負擔轉送與上傳能力. A crash 時 C, D 失去上游, 需要重新接入; 不能只畫一棵樹就宣稱具有故障恢復.
 
@@ -93,7 +93,7 @@ sequenceDiagram
 
 > [課程講義] P99 (Push/Pull 定義), P100 (Push convergence), P101 (Pull convergence). 以下用 $N=10$ 的數字把講義各步連起來; 數值例子與條件期望的說明屬 [教學補充/推導].
 
-先釐清一個容易卡住的符號: **$p_i$ 是"未更新 (susceptible) 的比例", 不是已更新比例. ** 要比較兩種演算法, 就計算"在第 i 輪仍未更新的節點, 經過下一輪後, 有多少仍然未更新".
+先釐清一個容易卡住的符號: $p_i$ 表示 **未更新 (susceptible) 的節點比例**, 而不是已更新比例. 要比較兩種演算法, 就計算在第 $i$ 輪仍未更新的節點, 經過下一輪後, 有多少仍然未更新.
 
 #### 模型與符號: 如何計算 Infective 數量?
 
@@ -102,13 +102,13 @@ sequenceDiagram
 - **Susceptible**: 尚未取得更新, 數量 $S_i$, 比例 $p_i=\frac{S_i}{N}$.
 - **Infective**: 已取得更新, 數量 $I_i=N-S_i=N(1-p_i)$, 比例 $1-p_i$.
 
-例如 $N=10$, 8 個 susceptible, 2 個 infective, 則 $p_i=\frac{8}{10}=0.8$, $1-p_i=0.2$, 因此 $N(1-p_i)=10\times0.2=2$. 在 Push 模型中, 每個 infective 每輪發起一次傳送, 所以**這一輪恰好有 2 次 Push 嘗試**. 一般情況就是 $N(1-p_i)$ 次.
+例如 $N=10$, 8 個 susceptible, 2 個 infective, 則 $p_i=\frac{8}{10}=0.8$, $1-p_i=0.2$, 因此 $N(1-p_i)=10\times0.2=2$. 在 Push 模型中, 每個 infective 每輪發起一次傳送, 所以 **這一輪恰好有 2 次 Push 嘗試**. 一般情況就是 $N(1-p_i)$ 次.
 
-本節遵守講義的簡化抽樣模型: 每個主動節點在**全部 N 個節點**中均勻隨機挑一個 partner (允許抽到自己), 各次選擇獨立; 一輪內以輪初狀態判斷是否有更新, 剛收到更新者下一輪才參與傳播; 先忽略丟包與故障. 給定輪初的 $S_i$ 後, 下一輪的結果仍是隨機變數, 下面算的是**預期比例**, 不是每次執行的精確結果.
+本節遵守講義的簡化抽樣模型: 每個主動節點在 **全部 N 個節點** 中均勻隨機挑一個 partner (允許抽到自己), 各次選擇獨立; 一輪內以輪初狀態判斷是否有更新, 剛收到更新者下一輪才參與傳播; 先忽略丟包與故障. 給定輪初的 $S_i$ 後, 下一輪的結果仍是隨機變數, 下面算的是 **預期比例**, 不是每次執行的精確結果.
 
 #### Push: 先算"某個未更新節點避開所有傳送"的機率 (P100)
 
-**步驟 1: 一次 Push 沒選中指定節點 C 的機率. ** 每個 infective 從 N 個目標中等機率選一個, 選中 C 的機率是 $\frac1N$; 因此沒選中的機率是:
+**步驟 1: 一次 Push 沒選中指定節點 C 的機率.** 每個 infective 從 N 個目標中等機率選一個, 選中 C 的機率是 $\frac1N$; 因此沒選中的機率是:
 
 $$
 P(\text{單次 Push 沒選中 C})=1-\frac{1}{N}
@@ -116,7 +116,7 @@ $$
 
 若 $N=10$, 沒選中 C 的機率為 $1-\frac1{10}=0.9$.
 
-**步驟 2: 所有 Infective 都沒選中 C. ** 一輪有 $I_i=N(1-p_i)$ 個 infective, 各自獨立發送一次. C 想逃過所有 Push, 就必須每一次都沒被選中; 因此機率要連乘 $I_i$ 次:
+**步驟 2: 所有 Infective 都沒選中 C.** 一輪有 $I_i=N(1-p_i)$ 個 infective, 各自獨立發送一次. C 想逃過所有 Push, 就必須每一次都沒被選中; 因此機率要連乘 $I_i$ 次:
 
 $$
 \begin{aligned}
@@ -126,14 +126,14 @@ P(\text{C 避開所有 Push}\mid\text{C 原本 susceptible})
 \end{aligned}
 $$
 
-以兩個 infective 的例子來說: $0.9\times0.9=0.81$. **指數不是傳播輪數, 而是這一輪有多少個已更新節點分別 Push 一次. **
+以兩個 infective 的例子來說: $0.9\times0.9=0.81$. **指數不是傳播輪數, 而是這一輪有多少個已更新節點分別 Push 一次.**
 
-**步驟 3: 計算下一輪仍未更新的比例. ** 從所有節點隨機挑一個節點 X, X 在下一輪後還是 susceptible, 須同時滿足:
+**步驟 3: 計算下一輪仍未更新的比例.** 從所有節點隨機挑一個節點 X, X 在下一輪後還是 susceptible, 須同時滿足:
 
 1. X 在本輪開始時就未更新, 機率 $p_i$.
 2. 在 X 原本未更新的條件下, X 沒被任何一次 Push 選中, 機率如步驟 2.
 
-利用條件機率的乘法規則 $P(A\cap B)=P(A)P(B\mid A)$, 得到有限 N 的**單輪條件期望式**:
+利用條件機率的乘法規則 $P(A\cap B)=P(A)P(B\mid A)$, 得到有限 N 的 **單輪條件期望式**:
 
 $$
 \frac{\mathbb E[S_{i+1}\mid S_i]}{N}
@@ -151,9 +151,9 @@ $$
 \end{aligned}
 $$
 
-$6.48$ 是**多次隨機執行的平均/期望**, 不是單次網路會出現 0.48 個節點.
+$6.48$ 是 **多次隨機執行的平均/期望**, 不是單次網路會出現 0.48 個節點.
 
-**步驟 4: 為何會出現自然常數 $e$? ** P100 使用大規模網路的極限:
+**步驟 4: 為何會出現自然常數?** P100 使用大規模網路的極限, 其中 $e$ 為自然常數:
 
 $$
 \begin{aligned}
@@ -177,13 +177,13 @@ $$
 
 Pull 的發起方向反過來: **每個 susceptible 節點主動向一個隨機 partner 要更新**. 若 partner 已更新, 請求者便可取得更新; 若 partner 也沒更新, 請求者仍維持 susceptible.
 
-**步驟 1: 自身原本就未更新. ** 從全部 N 個節點中隨機挑 X, 原本 susceptible 的機率是:
+**步驟 1: 自身原本就未更新.** 從全部 N 個節點中隨機挑 X, 原本 susceptible 的機率是:
 
 $$
 P(\text{X 原本 susceptible})=\frac{S_i}{N}=p_i
 $$
 
-**步驟 2: 詢問到的對象也未更新. ** 在 X 原本 susceptible 的前提下, 它從**全部 N 個節點均勻抽選** partner Y. 因有 $S_i=Np_i$ 個 susceptible:
+**步驟 2: 詢問到的對象也未更新.** 在 X 原本 susceptible 的前提下, 它從 **全部 N 個節點均勻抽選** partner Y. 因有 $S_i=Np_i$ 個 susceptible:
 
 $$
 \begin{aligned}
@@ -193,7 +193,7 @@ P(\text{Y 也 susceptible}\mid\text{X 原本 susceptible},S_i)
 \end{aligned}
 $$
 
-**步驟 3: 兩個條件同時成立. ** X 下一輪仍未更新, 表示"X 原本未更新"**而且**"Y 也未更新". 套用條件機率乘法:
+**步驟 3: 兩個條件同時成立.** X 下一輪仍未更新, 表示"X 原本未更新" **而且** "Y 也未更新". 套用條件機率乘法:
 
 $$
 \begin{aligned}
@@ -210,7 +210,7 @@ $$
 \text{Pull:}\quad p_{i+1}=p_i^2
 $$
 
- (本節模型的單輪條件期望比例)
+本節公式表示單輪條件期望比例.
 
 沿用 $N=10$, $p_i=0.8$ 的例子:
 
@@ -222,7 +222,7 @@ $$
 \end{aligned}
 $$
 
-這裡不需要像 Push 一樣算"避開所有已更新者的多次傳送", 因為**每個缺資料的節點只主動 Pull 一次**. 教授用"兩個事件獨立"理解乘法; 更精確的寫法是上面明列的**條件機率**, 避免把固定人數下所有節點的狀態誤稱為互相獨立. 若改成**禁止選到自己**, 第二個因子會是 $\frac{S_i-1}{N-1}$, 而非完全相同的 $p_i$; 這不是本頁公式採用的抽樣假設.
+這裡不需要像 Push 一樣算"避開所有已更新者的多次傳送", 因為 **每個缺資料的節點只主動 Pull 一次**. 教授用"兩個事件獨立"理解乘法; 更精確的寫法是上面明列的 **條件機率**, 避免把固定人數下所有節點的狀態誤稱為互相獨立. 若改成 **禁止選到自己**, 第二個因子會是 $\frac{S_i-1}{N-1}$, 而非完全相同的 $p_i$; 這不是本頁公式採用的抽樣假設.
 
 #### 同一組數字看清差異
 
@@ -259,12 +259,12 @@ P103 的假設情境是 N=10,000, 只有一台知道更新:
 
 末期若只剩少量 susceptible, 讓這些節點 Pull 可避免大量已知者繼續做重複 Push. 這才是 Push→Pull 混合策略的成本理由, 不是"Push 公式初期比 Pull 公式快".
 
-**課堂問答: 既然在 $0<p_i<1$ 時, Push 算出的 $p_{i+1}$ 比 Pull 大, 為什麼還要先 Push? **
+**課堂問答: 為什麼還要先 Push?** 當 $0<p_i<1$ 時, Push 算出的 $p_{i+1}$ 比 Pull 大, 為什麼還要先 Push?
 
 先分開兩個指標:
 
-- **Convergence (收斂速度) **: 下一輪剩餘的未更新比例 $p_{i+1}$; 數值**越小**, 代表更新擴散越快. 按 P99–P101 的遞迴公式, **Pull 每輪收斂比較快**, Push 從未因"初期 $p_i$ 大"而在這項指標上勝出.
-- **Message Overhead (主動通訊成本) **: 在"每個主動節點每輪聯絡一個隨機 partner"的模型中, **Push 發起 $N(1-p_i)$ 次, Pull 發起 $Np_i$ 次**. 此處先只比較主動聯絡次數, 未包含 Pull 的回覆負載, 檔案大小與重試成本.
+- **Convergence (收斂速度)**: 下一輪剩餘的未更新比例 $p_{i+1}$; 數值 **越小**, 代表更新擴散越快. 按 P99–P101 的遞迴公式, **Pull 每輪收斂比較快**, Push 從未因"初期 $p_i$ 大"而在這項指標上勝出.
+- **Message Overhead (主動通訊成本)**: 在"每個主動節點每輪聯絡一個隨機 partner"的模型中, Push 發起 $N(1-p_i)$ 次, Pull 發起 $Np_i$ 次. 此處先只比較主動聯絡次數, 未包含 Pull 的回覆負載, 檔案大小與重試成本.
 
 同樣固定 $N=10{,}000$, 比較更新傳播初期與末期:
 
@@ -273,9 +273,9 @@ P103 的假設情境是 N=10,000, 只有一台知道更新:
 | 初期: 1 個 infective, 9,999 個 susceptible ($p_i=0.9999$) | **1** | **9,999** | 大部分 Pull 都向同樣沒資料的節點詢問; 1 次 Push 幾乎總能找到未更新者 |
 | 末期: 9,999 個 infective, 1 個 susceptible ($p_i=0.0001$) | **9,999** | **1** | 大部分 Push 都送給已更新者; 唯一未更新者 Pull 幾乎總能找到已更新者 |
 
-兩種方法在初期**預期新更新節點數都約 1 個**, 但 Pull 必須先發出 9,999 次請求; 末期則相反, Pull 幾乎只需一次查詢即可補齊剩餘節點. 這也說明**並非每次 Pull 比每次 Push 更耗成本, 而是由哪一群節點主動發訊息, 決定每輪有多少次請求**.
+兩種方法在初期 **預期新更新節點數都約 1 個**, 但 Pull 必須先發出 9,999 次請求; 末期則相反, Pull 幾乎只需一次查詢即可補齊剩餘節點. 這也說明 **並非每次 Pull 比每次 Push 更耗成本, 而是由哪一群節點主動發訊息, 決定每輪有多少次請求**.
 
-> [課程講義] P102–P103 (Visualizing Epidemic Dissemination; Convergence vs. Overhead). **Push → Pull 是通訊成本與收斂速度的綜合取捨, 絕非"Push 初期的 $p_{i+1}$ 更小". ** 以上假設每輪固定抽樣, 單次 Push/Pull 嘗試, 實際 bytes, 往返延遲與總訊息數仍取決於實作.
+> [課程講義] P102–P103 (Visualizing Epidemic Dissemination; Convergence vs. Overhead). **Push → Pull 是通訊成本與收斂速度的綜合取捨**, 並非 Push 初期的 $p_{i+1}$ 更小. 以上假設每輪固定抽樣, 單次 Push/Pull 嘗試, 實際 bytes, 往返延遲與總訊息數仍取決於實作.
 
 
 有限 N 的例子: $N=100$, $S=90$, Push 的單輪期望比例為 $0.9(0.99)^{10}\approx0.813944$, 與大 N 近似 0.814354 略有差異; Pull 在本模型是 0.81.
@@ -297,7 +297,7 @@ P98 的"所有活節點終將收到", 要有可達通路, 持續公平抽樣及�
 
 ### 3.5 刪除, 衝突與 Anti-entropy 的工程邊界
 
-只有"較大版本覆蓋較小版本"的規則, 仍需定義版本比較與刪除表示. A 刪除 k, B 離線保有 k; 若 A 只把資料完全移除, B 恢復時可能把舊值傳回, 造成復活. **刪除標記 (Tombstone) ** 保留"已刪除及其版本", 使反熵能傳播刪除; 何時清除 tombstone 要有足夠的傳播, 成員與保留期條件.
+只有"較大版本覆蓋較小版本"的規則, 仍需定義版本比較與刪除表示. A 刪除 k, B 離線保有 k; 若 A 只把資料完全移除, B 恢復時可能把舊值傳回, 造成復活. **刪除標記 (Tombstone)** 保留"已刪除及其版本", 使反熵能傳播刪除; 何時清除 tombstone 要有足夠的傳播, 成員與保留期條件.
 
 並行更新的解法也不是 Gossip 自動決定. 可用 [Chapter 01 的 Vector Clock](01-logical-clocks-checkpointing.md) 辨認衝突, 再由應用合併, 或對需要強順序的項目採用共識. 傳播是否到齊與寫入語義是否正確, 是不同層的問題.
 
@@ -317,7 +317,7 @@ API 分層必須清楚: Chord 本身主要提供`lookup(key)` 找節點; block s
 
 > [課程講義] P106. 延伸: [Ratnasamy 等, A Scalable Content-Addressable Network](https://www.gsd.inesc-id.pt/~ler/docencia/srsdI/p13-ratnasamy.pdf), SIGCOMM 2001, §2; 以發表論文補充, 不是同名 2002 博士論文.
 
-**內容定址網路 (Content-Addressable Network, CAN) ** 把邏輯 d 維空間分成 zones, 每個 peer 負責其中一塊. 原始模型為 d-torus, 邊界環繞; 這是虛擬座標, 不是地理位置. Neighbor zones 在一維接壤, 其餘維度範圍重疊, 光碰到角落不一定算鄰居.
+**內容定址網路 (Content-Addressable Network, CAN)** 把邏輯 d 維空間分成 zones, 每個 peer 負責其中一塊. 原始模型為 d-torus, 邊界環繞; 這是虛擬座標, 不是地理位置. Neighbor zones 在一維接壤, 其餘維度範圍重疊, 光碰到角落不一定算鄰居.
 
 ### 5.1 用區域切分交接檔案鍵
 
@@ -380,7 +380,7 @@ sequenceDiagram
 
 ### 6.1 ID, Owner 與環繞區間
 
-**一致雜湊 (Consistent Hashing) ** 將節點與 keys 放到同一環狀空間. m-bit ID 的取值為 $0,\ldots,2^m-1$; key k 的責任節點`successor(k)` 是順時針方向第一個 ID $\ge k$ 的節點, 越過最大值則回到最小節點.
+**一致雜湊 (Consistent Hashing)** 將節點與 keys 放到同一環狀空間. m-bit ID 的取值為 $0,\ldots,2^m-1$; key k 的責任節點`successor(k)` 是順時針方向第一個 ID $\ge k$ 的節點, 越過最大值則回到最小節點.
 
 P107 的 $m=6$, 節點 $\{0,10,20,32,45,55\}$, 空間為 $0,\ldots,63$. 責任區間如下:
 
@@ -447,7 +447,7 @@ flowchart TD
 
 P107 的"Jump 8"可用來理解 finger start=40 的方向, 但 start 40 的 finger 是 N45. 當最後一跳跨過 key 到 successor, 是在辨識 owner, 前面的選擇仍遵照 closest-preceding 規則.
 
-環繞案例: 從 N45 找 60, 可到 N55, 再發現 $60\in$$(55,0]$, owner=N0. 普通整數比較會錯誤拒絕跨 63→0 的有效區間, 故 pseudocode 必須使用 modulo interval.
+環繞案例: 從 N45 找 60, 可到 N55, 再發現 $60\in(55,0]$, owner=N0. 普通整數比較會錯誤拒絕跨 63→0 的有效區間, 故 pseudocode 必須使用 modulo interval.
 
 ### 6.4 為何能前進? 有哪些限制?
 
@@ -489,7 +489,7 @@ sequenceDiagram
 
 ### 7.2 Successor 故障與 Successor List
 
-**節點變動 (Churn) ** 包含加入, 離開與 crash. 若 N10 只記 N15, 一旦 N15 失聯便無路可走; **後繼清單 (Successor List) ** 可保存多個順時針候選, 在最近者不可達時換成下一個, 再執行修補.
+**節點變動 (Churn)** 包含加入, 離開與 crash. 若 N10 只記 N15, 一旦 N15 失聯便無路可走; **後繼清單 (Successor List)** 可保存多個順時針候選, 在最近者不可達時換成下一個, 再執行修補.
 
 但 timeout 可能誤判; 連續後繼若屬同一實體機器或同一網路分區, 複數 IDs 不等於獨立容錯. 若所有候選都失效, 指標形成多環或無法橋接分區, 不能承諾一次 stabilize 就自動恢復全球可達性.
 
@@ -552,7 +552,7 @@ P113 將 mutable state across untrusted nodes 與 quorum 並列; 技術上標準
 
 > [課程講義] P113–P114. 延伸: [Douceur, The Sybil Attack](https://www.microsoft.com/en-us/research/wp-content/uploads/2002/01/IPTPS2002.pdf), 2002.
 
-**多重假身份攻擊 (Sybil Attack) ** 是一個實體建立多個邏輯身份, 讓"不同節點"不再代表獨立控制者. **日蝕攻擊 (Eclipse Attack) ** 則使受害者可接觸的 routing/neighbor view 被攻擊者包圍, 查詢與更新受其控制. 大量 Sybil IDs 可以協助達成 Eclipse, 但兩者不是同義詞.
+**多重假身份攻擊 (Sybil Attack)** 是一個實體建立多個邏輯身份, 讓"不同節點"不再代表獨立控制者. **日蝕攻擊 (Eclipse Attack)** 則使受害者可接觸的 routing/neighbor view 被攻擊者包圍, 查詢與更新受其控制. 大量 Sybil IDs 可以協助達成 Eclipse, 但兩者不是同義詞.
 
 自製例子: 系統以三個不同 node IDs 保存 block, 就宣稱可容錯一個不誠實者; 若三個 IDs 都由同一攻擊者控制, 副本數沒有提供所假設的獨立性. 若 Client 所有 bootstrap 與 successor 回覆都來自攻擊者, 它甚至可能看不到真正的其他 peers.
 
@@ -578,13 +578,13 @@ P115 用 Web 1.0/2.0/3.0 描述 Read-only, Read-write 與區塊鏈相關應用�
 | Presentation & Storage, 如 IPFS | 將大型資產放鏈外, 以內容識別取得 | CID 驗證內容不等於保證有人永久提供資料 |
 | dApps | 結合使用者介面, 鏈上邏輯與鏈外內容 | UI, 私鑰, 合約與鏈外服務仍有各自風險 |
 
-IPFS 的 **內容識別碼 (Content Identifier, CID) ** 包含 hash 與編碼等資訊, 不必等於整個原始檔案的單一 SHA-256. 應用可用 CID 指向鏈外資產, 並在取回後驗證, 但 availability 仍需有人保留與提供內容. Pinning 可讓指定節點保留物件, 避免本地垃圾回收; 不表示所有節點都自動保存它, 也不代表 IPFS 的 routing 就是 Chord.
+IPFS 的 **內容識別碼 (Content Identifier, CID)** 包含 hash 與編碼等資訊, 不必等於整個原始檔案的單一 SHA-256. 應用可用 CID 指向鏈外資產, 並在取回後驗證, 但 availability 仍需有人保留與提供內容. Pinning 可讓指定節點保留物件, 避免本地垃圾回收; 不表示所有節點都自動保存它, 也不代表 IPFS 的 routing 就是 Chord.
 
 ### 11.1 Blockchain 與 IPFS 之間靠什麼連接?
 
 > [教學補充/推導] 依 P116 的分層架構延伸; IPFS 實作參考官方文件 [Content Identifiers](https://docs.ipfs.tech/concepts/content-addressing/), [Distributed Hash Tables](https://docs.ipfs.tech/concepts/dht/), [How IPFS works](https://docs.ipfs.tech/concepts/how-ipfs-works/), [Pin files](https://docs.ipfs.tech/how-to/pin-files/) (2026-11-25 核對).
 
-假設遊戲交易平台管理一把武器的持有者及其 100 MB 的 3D 模型`weapon.obj`. 持有者是需要共同驗證的紀錄, 適合放在區塊鏈 (On-chain); 模型內容很大, 則可放在 IPFS (InterPlanetary File System, 星際檔案系統) 等鏈下 (Off-chain) 網路. **兩套系統之間的連結是 CID, 而不是固定伺服器的 IP 位址. **
+假設遊戲交易平台管理一把武器的持有者及其 100 MB 的 3D 模型`weapon.obj`. 持有者是需要共同驗證的紀錄, 適合放在區塊鏈 (On-chain); 模型內容很大, 則可放在 IPFS (InterPlanetary File System, 星際檔案系統) 等鏈下 (Off-chain) 網路. **兩套系統之間的連結是 CID, 而不是固定伺服器的 IP 位址.**
 
 發布時先將模型加入 IPFS, 取得代表其內容的 CID, 再把該 CID 或包含它的 URI 寫入鏈上紀錄. 以下 XYZ123 是教學用的簡化識別碼, 不是真實 CID.
 
@@ -603,7 +603,7 @@ Ethereum (以太坊) 是本例維護鏈上紀錄的區塊鏈平台; Alchemy 是�
 
 檔案實際上仍然存在某些機器的儲存裝置中, 但 CID 不指定哪一台機器. 傳統位置定址 (Location Addressing) 以`https://server.example/weapon.obj` 指定服務位置; IPFS 的內容定址 (Content Addressing) 則以`ipfs://XYZ123` 表示要取得哪份內容. 同一內容在相同匯入設定下可得到相同 CID, 即使提供者改變也不必改動鏈上的引用. 內容改變通常會得到新的 CID; 大型檔案的 CID 可代表由多個區塊構成的資料結構, 並非必然等於整個檔案的單一 hash.
 
-前面 Chord 使用 DHT 找到 key 的責任節點. IPFS 也使用 DHT, 但採用 Kademlia, 而非 Chord; 其內容路由可以查詢提供者紀錄 (Provider Record), 找出哪些 Peer 宣告能提供指定內容. 簡化來看, 假設 XYZ123 的內容由 Peer A, B, C 提供, 查詢便能取得候選提供者, 再聯絡其中可達的節點. **負責保存 DHT 提供者紀錄的節點, 不一定就是保存檔案內容的節點. ** IPFS 也有其他內容路由方式, 因此 DHT 不是所有讀取必經的唯一機制.
+前面 Chord 使用 DHT 找到 key 的責任節點. IPFS 也使用 DHT, 但採用 Kademlia, 而非 Chord; 其內容路由可以查詢提供者紀錄 (Provider Record), 找出哪些 Peer 宣告能提供指定內容. 簡化來看, 假設 XYZ123 的內容由 Peer A, B, C 提供, 查詢便能取得候選提供者, 再聯絡其中可達的節點. **負責保存 DHT 提供者紀錄的節點, 不一定就是保存檔案內容的節點.** IPFS 也有其他內容路由方式, 因此 DHT 不是所有讀取必經的唯一機制.
 
 ### 11.3 完整讀取流程: 從武器編號到模型檔案
 
@@ -643,7 +643,7 @@ sequenceDiagram
 
 Pinning (固定保留) 是要求某個 IPFS 節點保留指定內容, 避免本地垃圾回收的機制; 若需要長期可用, 還須維護在線的保存節點或遠端 pinning 服務, 並考慮多份獨立副本. Pinning 不等於全網永久複寫.
 
-**重點: 區塊鏈保存可驗證的引用與狀態, CID 識別內容, IPFS 尋找並傳輸內容; 三者分工, 不能彼此取代. **
+**重點: 區塊鏈保存可驗證的引用與狀態, CID 識別內容, IPFS 尋找並傳輸內容; 三者分工, 不能彼此取代.**
 
 本節只銜接課程示意, 不展開 P239 起的 Blockchain 單元, 也不作產品投資或安全程度的排名.
 
@@ -672,7 +672,7 @@ What is true about an overlay hop?
 - C. It guarantees lower latency than a direct Internet path.
 - D. It removes all dependence on physical network connectivity.
 
-**答案: B. ** A: 邏輯邊可經多台 routers. B: 正確的層次關係. C: 繞路與轉送可增加延遲. D: 仍由底層網路承載.
+**答案: B.** A: 邏輯邊可經多台 routers. B: 正確的層次關係. C: 繞路與轉送可增加延遲. D: 仍由底層網路承載.
 
 ### Q2 — Pull cost
 
@@ -683,7 +683,7 @@ In the lecture's round model, only one of 10,000 nodes has an update. Why can in
 - C. Pull's recurrence is mathematically always slower.
 - D. Only the one infective node initiates Push, while 9,999 susceptible nodes may initiate Pull.
 
-**答案: D. ** A: Pull 仍可能找到已知者. B: 一輪最多按模型散到少量新者. C: P103 公式恰好呈現 Pull 每輪較快. D: 差別在主動請求成本.
+**答案: D.** A: Pull 仍可能找到已知者. B: 一輪最多按模型散到少量新者. C: P103 公式恰好呈現 Pull 每輪較快. D: 差別在主動請求成本.
 
 ### Q3 — Approximation
 
@@ -694,7 +694,7 @@ For fixed N and S susceptible nodes at a round's start, which expression gives t
 - C. Exactly zero after any successful transmission.
 - D. $e^N$.
 
-**答案: A. ** A: $\frac SN$ 乘上逃過全部 $N-S$ 次 Push 的機率. B: 不符合機率範圍與抽樣. C: 一次成功不代表其餘人也收到. D: 不是未感染比例.
+**答案: A.** A: $\frac SN$ 乘上逃過全部 $N-S$ 次 Push 的機率. B: 不符合機率範圍與抽樣. C: 一次成功不代表其餘人也收到. D: 不是未感染比例.
 
 ### Q4 — Finger entry
 
@@ -705,7 +705,7 @@ For node N32 in that ring, what is the finger at offset 8?
 - C. N55.
 - D. N45, because successor(40)=45.
 
-**答案: D. ** A: 忘記加本地 ID. B: start 與現存 peer 不同. C: 45 比 55 更先接續 40. D: 套用 finger 定義.
+**答案: D.** A: 忘記加本地 ID. B: start 與現存 peer 不同. C: 45 比 55 更先接續 40. D: 套用 finger 定義.
 
 ### Q5 — CFS layers
 
@@ -716,7 +716,7 @@ Which assignment of responsibilities matches the original CFS architecture?
 - C. Every file read must commit a new Paxos value.
 - D. A content hash guarantees that data remains available forever.
 
-**答案: B. ** A: Chord 是 lookup 層. B: 分工正確. C: P112 是可變資料的設計延伸, 不是原始唯讀 CFS 每次讀取路徑. D: 完整性不等於可用性與保留期.
+**答案: B.** A: Chord 是 lookup 層. B: 分工正確. C: P112 是可變資料的設計延伸, 不是原始唯讀 CFS 每次讀取路徑. D: 完整性不等於可用性與保留期.
 
 ## 14. 來源與投影片對照
 
