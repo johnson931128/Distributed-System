@@ -24,7 +24,7 @@ flowchart LR
 
 > [課程講義] P71–P74. 延伸: [Hunt 等, ZooKeeper: Wait-free coordination for Internet-scale systems](https://www.usenix.org/events/atc10/tech/full_papers/Hunt.pdf), §2–§3.
 
-**伺服器群體 (Ensemble) ** 共同維護資料樹. Client 通常連接一台伺服器, 並由 client library 管理重新連線. 一般讀取由連線端的本地副本處理; 更新則經過 Leader 排序, 複寫與提交.
+**伺服器群體 (Ensemble)** 共同維護資料樹. Client 通常連接一台伺服器, 並由 client library 管理重新連線. 一般讀取由連線端的本地副本處理; 更新則經過 Leader 排序, 複寫與提交.
 
 Worker 連到 F1 後就能讀`/app/config`, F1 直接用自己已套用的狀態答覆, 因此省去每次讀取的多數往返. 管理者若向同一台 F1 寫入, 請求則得經過領導者 (Leader) 排序, 再由足夠副本持久保存. 這條路有更多網路與磁碟成本, 也使 F1 和 F2 的讀取進度可能短暫不同.
 
@@ -34,7 +34,7 @@ P71–P72 的讀寫比例, microsecond latency, P88 的讀取吞吐成長描述,
 
 ### 2.1 Wait-free 不等於請求不等待網路
 
-**無等待協調介面 (Wait-free Coordination Interface) ** 在本章指核心 API 不要求某個 Client 先釋放一把服務內建的阻塞鎖, 其他 Client 才能更新共享資料. 慢 Client 的 Watch callback 不應成為所有更新都要等它同意的同步屏障.
+**無等待協調介面 (Wait-free Coordination Interface)** 在本章指核心 API 不要求某個 Client 先釋放一把服務內建的阻塞鎖, 其他 Client 才能更新共享資料. 慢 Client 的 Watch callback 不應成為所有更新都要等它同意的同步屏障.
 
 這不代表 RPC 在任意分區下都有固定完成時間, 也不代表應用無法死結. 同步 API 仍可阻塞呼叫端, quorum 不可達時操作也不能任意成功. 應用若自行組合鎖並以相反順序取得資源, 仍可能形成死結.
 
@@ -44,7 +44,7 @@ P71–P72 的讀寫比例, microsecond latency, P88 的讀取吞吐成長描述,
 
 ### 3.1 寫入至少要經過哪些伺服器?
 
-普通等權重配置中, 有 N 個投票伺服器, **多數法定人數 (Majority Quorum) ** 為 $q=\left\lfloor\frac{N}{2}\right\rfloor+1$. Leader 自己也是投票群體的一員. 非投票 Observer 不增加分母; 本節不涵蓋 weighted/hierarchical quorum 或配置變更.
+普通等權重配置中, 有 N 個投票伺服器, **多數法定人數 (Majority Quorum)** 為 $q=\left\lfloor\frac{N}{2}\right\rfloor+1$. Leader 自己也是投票群體的一員. 非投票 Observer 不增加分母; 本節不涵蓋 weighted/hierarchical quorum 或配置變更.
 
 例如 N=5, q=3; 三台仍能互通且恢復協定完成時, 可以繼續處理更新. N=4 時 q=3, 不是 2. P78 畫 Leader 加三個 Followers, 其"2 out of 3"可安全讀為 Leader 自身已可靠記錄, 再加三個 Followers 中的兩個 ACK, 共三個 voting servers.
 
@@ -111,7 +111,7 @@ P77 的"Simplified Two-Phase Commit"是 proposal/ACK/commit 的教學類比, 不
 
 > [課程講義] P80–P81. 延伸: [ZooKeeper 3.9.4 Programmer's Guide](https://zookeeper.apache.org/doc/r3.9.4/zookeeperProgrammers.html), Data Model, Sessions, Stat Structure.
 
-**資料節點 (Znode) ** 同時可有小型資料與子節點, 位置以 path 命名, 例如`/app/config` 與`/app/workers/w1`. 它不是供任意大型檔案讀寫的一般檔案系統; 沒有因為使用路徑就自動取得資料庫交易或 POSIX 檔案語義.
+**資料節點 (Znode)** 同時可有小型資料與子節點, 位置以 path 命名, 例如`/app/config` 與`/app/workers/w1`. 它不是供任意大型檔案讀寫的一般檔案系統; 沒有因為使用路徑就自動取得資料庫交易或 POSIX 檔案語義.
 
 管理者建立持久節點 (Persistent Znode) 保存`/app/config`, 離線後設定仍在. Worker 則用暫存節點 (Ephemeral Znode) 登記`/app/workers/w1`, 它的工作階段 (Session) 結束時註冊會被清除. 一般暫存節點不能有子節點. 如果為每次鎖請求加上循序旗標 (Sequential Flag), ZooKeeper 會在同一父目錄範圍的名稱後附加序號. 結合兩個旗標, 就有了可以排序, 也能在 Session 到期後清理的請求.
 
@@ -127,7 +127,7 @@ P77 的"Simplified Two-Phase Commit"是 proposal/ACK/commit 的教學類比, 不
 2. B 仍依舊內容計算`{limit:12}`, 也以 expectedVersion=4 寫入.
 3. ZooKeeper 拒絕 B, 回 BadVersion. B 必須讀取 version=5 後, 再依應用規則決定是否重試.
 
-這相當於**比較後更新 (Compare-and-Set, CAS) ** 式的樂觀併行控制, 不要求讀取期間持有鎖. 它防止"不知資料已變就覆蓋", 卻不保證 B 的重試永遠不飢餓. 若 B 改用 -1, 等於明確放棄這項保護.
+這相當於 **比較後更新 (Compare-and-Set, CAS)** 式的樂觀併行控制, 不要求讀取期間持有鎖. 它防止"不知資料已變就覆蓋", 卻不保證 B 的重試永遠不飢餓. 若 B 改用 -1, 等於明確放棄這項保護.
 
 資料`version=5` 是該 znode 的資料修改次數, `zxid=(7,41)` 是 ensemble 更新位置, `x-0000000012` 是同父節點的排隊名稱. 設定如今可以更新了, 接著用 Session 辨識哪些 Worker 還保有註冊, 再用 Watch 通知它們何時重讀設定.
 
@@ -145,7 +145,7 @@ P77 的"Simplified Two-Phase Commit"是 proposal/ACK/commit 的教學類比, 不
 
 > [課程講義] P81, P87. 技術補充: Programmer's Guide 的 ZooKeeper Sessions.
 
-**工作階段 (Session) ** 跨越 Client 與伺服器的單次 TCP 連線. Client 可重新連到其他伺服器, 並在有效期間內繼續原 Session; ensemble 依協商的 Session timeout 與活動判斷是否到期.
+**工作階段 (Session)** 跨越 Client 與伺服器的單次 TCP 連線. Client 可重新連到其他伺服器, 並在有效期間內繼續原 Session; ensemble 依協商的 Session timeout 與活動判斷是否到期.
 
 ```mermaid
 stateDiagram-v2
@@ -175,7 +175,7 @@ P87 寫 Ephemeral 綁定 TCP session, 作為直覺可理解; 實作時應修正�
 
 > [課程講義] P74, P82. 延伸: Programmer's Guide 的 Watches; 以下核心 recipe 使用標準 one-shot Watch.
 
-**監看通知 (Watch) ** 讓 Client 在讀取時註冊變動通知. 標準 Watch 觸發一次後, 若仍需追蹤, 必須再次註冊; 3.9.4 也有 Persistent/Recursive Watch, 不能把它們與本章標準模式混為一談.
+**監看通知 (Watch)** 讓 Client 在讀取時註冊變動通知. 標準 Watch 觸發一次後, 若仍需追蹤, 必須再次註冊; 3.9.4 也有 Persistent/Recursive Watch, 不能把它們與本章標準模式混為一談.
 
 正確模式是: **讀取並設 Watch → 收事件後把 cache 視為失效 → 再讀取並重設 Watch → 依新狀態決策**. 通知不攜帶完整新資料, 也不保證每次中間修改都有獨立 callback.
 
@@ -214,7 +214,7 @@ W1 用 Session S1 建立`/app/workers/w1`, 資料為 endpoint; W2 用 S2 建 w2.
 
 > [課程講義] P83–P87. 延伸: [ZooKeeper 3.9.4 Recipes: Locks](https://zookeeper.apache.org/doc/r3.9.4/recipes.html), Hunt 等 §2.4.
 
-**分散式鎖 (Distributed Lock) ** 的直接目標是讓遵循同一 recipe 的有效 Client 按協定排隊; 被保護的外部資源是否能拒絕過期持有者, 還需第 8.4 節的約束.
+**分散式鎖 (Distributed Lock)** 的直接目標是讓遵循同一 recipe 的有效 Client 按協定排隊; 被保護的外部資源是否能拒絕過期持有者, 還需第 8.4 節的約束.
 
 ### 8.1 三個 Client 正常排隊
 
@@ -246,7 +246,7 @@ sequenceDiagram
 
 圖 3.4 - C1 刪除自己的請求, 只喚醒這次直接等它的 C2. C2 還要重新檢查自己是否為隊首. 自繪, 參考成大講義 P84–P86.
 
-**驚群效應 (Thundering Herd) ** 指所有等待者監看同一節點, 釋放一次便使所有人醒來重試. 前驅鏈在穩定隊列中讓一次釋放只喚醒直接後繼, 減少不必要通知與 RPC; 不能把 P86 的"exactly one"擴張成 Session 批次清理, 重連或所有併行情境都只有一個 callback.
+**驚群效應 (Thundering Herd)** 指所有等待者監看同一節點, 釋放一次便使所有人醒來重試. 前驅鏈在穩定隊列中讓一次釋放只喚醒直接後繼, 減少不必要通知與 RPC; 不能把 P86 的"exactly one"擴張成 Session 批次清理, 重連或所有併行情境都只有一個 callback.
 
 ### 8.2 完整 recipe 與前提
 
@@ -300,7 +300,7 @@ sequenceDiagram
 
 [教學補充/推導] 假設 C1 已持鎖, 但與 ZooKeeper 隔離; 它仍能連到資料庫. Session 到期後 C2 取得新鎖, C1 卻因長暫停恢復而繼續送舊寫入. Ephemeral 清理不能撤回另一條網路連線已送出的請求.
 
-可在應用設計**隔離代碼 (Fencing Token) **: 每次授權給出嚴格遞增的 generation, 外部儲存與更新原子地保存已接受最大值. 例: C1 的 41, C2 的 42; 儲存端先接受 42 後, 對 41 的延遲操作回拒絕.
+可在應用設計 **隔離代碼 (Fencing Token)**: 每次授權給出嚴格遞增的 generation, 外部儲存與更新原子地保存已接受最大值. 例: C1 的 41, C2 的 42; 儲存端先接受 42 後, 對 41 的延遲操作回拒絕.
 
 ```text
 atomic external_write(token, operation):
@@ -316,7 +316,7 @@ atomic external_write(token, operation):
 
 > [課程講義] P74, P88. 技術補充: ZooKeeper 3.9.4 Internals 的 Consistency Guarantees; 查詢日期 2026-11-20.
 
-**線性一致性 (Linearizability) ** 要求操作可視為在呼叫與回覆間的一個瞬間生效, 並保留真實時間先後. ZooKeeper 的更新提供強順序, 但本地讀取可能落後; **Client FIFO Order** 也不是不同 Client 間共享一個最新觀測點.
+**線性一致性 (Linearizability)** 要求操作可視為在呼叫與回覆間的一個瞬間生效, 並保留真實時間先後. ZooKeeper 的更新提供強順序, 但本地讀取可能落後; **Client FIFO Order** 也不是不同 Client 間共享一個最新觀測點.
 
 自製反例: A 寫入 v8 並收到成功, 再經另一個通訊管道告知 B. B 連到尚停在 v7 的 Follower, 其一般讀取可能仍得到 v7; B 沒有違反自己原本觀察的 FIFO 順序, 卻未滿足"在 A 完成後必讀到 A 的更新"的期望.
 
@@ -345,7 +345,7 @@ An ensemble has one voting leader, three voting followers, and two non-voting ob
 - C. Four.
 - D. Six.
 
-**答案: B. ** A: 四名投票者的半數不夠. B: $\left\lfloor\frac{4}{2}\right\rfloor+1=3$, 可包含 Leader. C: 不必全體. D: Observer 不計票.
+**答案: B.** A: 四名投票者的半數不夠. B: $\left\lfloor\frac{4}{2}\right\rfloor+1=3$, 可包含 Leader. C: 不必全體. D: Observer 不計票.
 
 ### Q2 — Standard Watch
 
@@ -356,7 +356,7 @@ A znode changes twice before a notified client rereads it. What should the clien
 - C. No reread is necessary.
 - D. Its cached data is stale; it should reread and reestablish the watch.
 
-**答案: D. ** A: one-shot 不保證逐筆通知. B: 通知不是資料日誌. C: 需要讀取新狀態. D: 正確的失效通知模式.
+**答案: D.** A: one-shot 不保證逐筆通知. B: 通知不是資料日誌. C: 需要讀取新狀態. D: 正確的失效通知模式.
 
 ### Q3 — Missing predecessor
 
@@ -367,7 +367,7 @@ After listing lock children, a client calls exists(predecessor,true) and gets no
 - C. Declare that its session has certainly expired.
 - D. Delete every remaining request.
 
-**答案: A. ** A: 前驅可能已在兩次 RPC 間消失. B: 可能再無該刪除事件. C: 不存在不證明自身 Session 到期. D: 不能破壞其他請求.
+**答案: A.** A: 前驅可能已在兩次 RPC 間消失. B: 可能再無該刪除事件. C: 不存在不證明自身 Session 到期. D: 不能破壞其他請求.
 
 ### Q4 — sync()
 
@@ -378,7 +378,7 @@ Which statement matches the documented limitation of sync() in ZooKeeper 3.9.4?
 - C. It is not itself a quorum operation, so its strongest freshness interpretation needs care.
 - D. An asynchronous sync callback can always be ignored.
 
-**答案: C. ** A: 官方記錄舊 Leader 情境限制. B: 它不控制外部資源. C: 保留真正的語義邊界. D: 未等完成不能把它當已完成屏障.
+**答案: C.** A: 官方記錄舊 Leader 情境限制. B: 它不控制外部資源. C: 保留真正的語義邊界. D: 未等完成不能把它當已完成屏障.
 
 ### Q5 — Stale lock holder
 
@@ -389,7 +389,7 @@ An expired client can still reach the external storage. What most directly helps
 - C. Sorting old callback timestamps locally.
 - D. An enforced, monotonically ordered fencing generation at the storage boundary.
 
-**答案: D. ** A: 不影響寫入權限. B: 無此撤回保證. C: 本地排序無法讓儲存識別舊權限. D: 儲存必須原子拒絕落後 generation, token 來源也需正確.
+**答案: D.** A: 不影響寫入權限. B: 無此撤回保證. C: 本地排序無法讓儲存識別舊權限. D: 儲存必須原子拒絕落後 generation, token 來源也需正確.
 
 ## 12. 來源與投影片對照
 
