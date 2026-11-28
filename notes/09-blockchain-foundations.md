@@ -94,7 +94,7 @@ flowchart LR
 節點間如何快速對齊彼此擁有的區塊進度? (P259–P260).
 
 - **區塊高度 (Block Height) 如同比擬 Kafka High Watermark**: 節點透過 Gossip 宣告自身高度 (例如 Node Y 與 Node Z 宣告 Height 105, 而 Node X 停在 Height 100), Node X 即可推斷對方擁有完整 `0..105` 歷史, 並分散向 Node Y 請求 `101..103`, 向 Node Z 請求 `104..105`.
-- **標頭優先同步 (Headers-First Sync)**: 現代公鏈不會逐塊串行下載龐大的完整區塊. Step 1 先循序下載僅 $80\text{ bytes}$ 的輕量 **Block Headers**, 瞬間驗證 PoW 鏈條並確認最長鏈藍圖; Step 2 再依據已驗證的標頭清單, 同時向多個 Peer 非同步平行下載 $1$–$4\text{ MB}$ 的交易主體 (Tx Bodies), 徹底消除單點下載瓶頸.
+- **標頭優先同步 (Headers-First Sync)**: 現代公鏈不會逐塊串行下載龐大的完整區塊. Step 1 先循序下載僅 $80\text{ bytes}$ 的輕量 **Block Headers**, 瞬間驗證 PoW 鏈條並確認最長鏈藍圖; Step 2 再依據已驗證的標頭清單, 同時向多個 Peer 非同步平行下載 $1$ 至 $4\text{ MB}$ 的交易主體 (Tx Bodies), 徹底消除單點下載瓶頸.
 
 ## 4. 執行域: 智能合約的被動觸發與確定性執行
 

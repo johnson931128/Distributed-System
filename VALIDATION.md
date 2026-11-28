@@ -161,11 +161,19 @@ ZooKeeper 部分驗證的是有限隊列、CAS 與前驅消失的教學交錯；
 | 練習題與圖解數量 | 新增 25 題英文單選題（每章 5 題，均附 A–D 解析）與 12 張內嵌原創 Mermaid 圖（已移除 `<br/>` HTML 標籤以提高雙平台相容性），每張圖皆附完整文字推演。 |
 | 學習進度保護 | 保持使用者既有進度（P1–P62 已學習），Chapter 03–09 均標示為 `待閱讀/已整理`。 |
 
+### GitHub 線上實際渲染驗證（2026-11-27）
+
+推送至 `origin/main` 後，以無頭 Chrome（Playwright）實際載入公開 Repository 的 7 個線上頁面（`README.md`、`notes/README.md` 及 `notes/05`–`09`）並滾動觸發完整渲染與截圖目檢：
+
+| 項目 | 線上實測結果 |
+| --- | --- |
+| 頁面存取與表格 | 7 頁全數回傳 HTTP 200，Markdown 表格與跨章節導覽連結正常顯示。 |
+| GitHub LaTeX 渲染 | 全數 `<math-renderer>` 元件（359+ 處）皆正常轉譯為 MathJax，0 處 `merror`；初檢在 Chapter 09 §3.4 發現 `$1$–$4\text{ MB}$` 因破折號緊鄰 `$` 未被 GitHub 解析，已改為 `$1$ 至 $4\text{ MB}$` 並重新推送複驗通過（0 處未解析 `$` 或 `**`）。 |
+| GitHub Mermaid 渲染 | Chapter 05–09 共 12 張 Mermaid 圖全數於 `viewscreen.githubusercontent.com` iframe 內成功生成 SVG（`err=False`），無語法錯誤，且已實際截圖目檢。 |
+
 ### 尚未執行的驗收（誠實標註）
 
 | 項目 | 狀態 | 說明 |
 | --- | --- | --- |
-| Headless 瀏覽器 Mermaid 實際渲染 | `NOT_RUN` | 本次僅完成靜態語法與跨平台安全寫法核對，未於瀏覽器啟動 Mermaid 引擎繪圖驗證。 |
-| GitHub 實際頁面顯示 | `NOT_RUN` | 尚未獲授權 commit / push 至遠端，發布後需逐章檢查 LaTeX 公式、表格與 Mermaid 圖。 |
-| HackMD 實際 Note 顯示 | `NOT_RUN` | 尚無 HackMD Note URL，需從 GitHub 發布後逐篇 Pull 並檢查雙平台呈現。 |
+| HackMD 實際 Note 顯示 | `NOT_RUN` | 尚無 HackMD Note URL，需從 GitHub 逐篇 Pull 後再檢查雙平台呈現。 |
 | 真實叢集 / 節點部署測試 | `NOT_RUN` | 算例程式僅驗證有限數學與流程案例，未部署真實 HBase、HDFS、Spark、Kafka 或區塊鏈節點。 |
