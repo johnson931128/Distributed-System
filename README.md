@@ -2,7 +2,7 @@
 
 將國立成功大學 Prof. Hung-Chang Hsiao 的 Distributed Systems (Fall 2026) 講義擴寫成可推演, 除錯與比較設計的工程筆記. 使用繁體中文與 American English 技術名詞; 以完整協定, 數值案例, 故障反例與附解析的英文單選題為主.
 
-**Chapter 00–04 (P1–P117) 已完成教學改版.** 從正常案例和圖解引入機制, 再解釋故障, 正確性與限制. 使用者已確認的學習進度為 P1–P62, Chapter 03/04 已整理, 待閱讀. 下一個整理單元從 P118 開始. [筆記目錄](notes/README.md)
+**Chapter 00–09 (P1–P270) 已全數整理完畢.** 從正常案例和圖解引入機制, 再解釋故障, 正確性與限制, 並涵蓋課堂標註的核心考點. 使用者已確認的學習進度為 P1–P62, Chapter 03–09 已整理, 待閱讀. [筆記目錄](notes/README.md)
 
 ## 章節索引與進度
 
@@ -13,11 +13,11 @@
 | 02 Fault Tolerance, Paxos & Raft | P41–P62 | [容錯與共識](notes/02-fault-tolerance-paxos-raft.md) | 已學習/已撰寫 | 待連結 |
 | 03 ZooKeeper | P63–P89 | [分散式協調服務](notes/03-zookeeper.md) | 已整理/待閱讀 | 待連結 |
 | 04 P2P & Gossip | P90–P117 | [P2P, Gossip 與 DHT](notes/04-peer-to-peer-gossip.md) | 已整理/待閱讀 | 待連結 |
-| 05 Consistency, Replication & Transactions | P118–P155 | 規劃中 | 待學習 | 待連結 |
-| 06 LevelDB & HBase | P156–P182 | 規劃中 | 待學習 | 待連結 |
-| 07 HDFS, MapReduce, YARN & Spark | P183–P210 | 規劃中 | 待學習 | 待連結 |
-| 08 Kafka & Stream Processing | P211–P238 | 規劃中 | 待學習 | 待連結 |
-| 09 Blockchain Foundations | P239–P270 | 規劃中 | 待學習 | 待連結 |
+| 05 Consistency, Replication & Transactions | P118–P155 | [資料一致性與交易](notes/05-consistency-replication-transactions.md) | 已整理/待閱讀 | 待連結 |
+| 06 LevelDB & HBase | P156–P182 | [儲存引擎與 HBase](notes/06-leveldb-hbase.md) | 已整理/待閱讀 | 待連結 |
+| 07 HDFS, MapReduce, YARN & Spark | P183–P210 | [大數據儲存與運算](notes/07-hdfs-mapreduce-yarn-spark.md) | 已整理/待閱讀 | 待連結 |
+| 08 Kafka & Stream Processing | P211–P238 | [資料串流與 Kafka](notes/08-kafka-stream-processing.md) | 已整理/待閱讀 | 待連結 |
+| 09 Blockchain Foundations | P239–P270 | [區塊鏈基礎](notes/09-blockchain-foundations.md) | 已整理/待閱讀 | 待連結 |
 
 ## 教材與來源
 
@@ -53,4 +53,4 @@ GitHub 是版本控制來源, HackMD 用於閱讀, 註解與分享; 每篇 Note 
 
 教材文字與指定圖表已核對; 本機驗證項目及實際結果記錄於 [驗證紀錄](VALIDATION.md). 本機渲染, GitHub 實際顯示, HackMD 實際顯示分開回報, 不以語法檢查代替線上驗收.
 
-教學改版的本機檢查與雙平台驗收狀態見驗證紀錄. P118 起尚待整理.
+Chapter 00–09 (P1–P270) 皆已完成本機整理與有限算例檢查; 線上 GitHub 與 HackMD 雙平台畫面驗收待推送後分開確認.

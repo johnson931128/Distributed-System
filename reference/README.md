@@ -202,3 +202,24 @@ SHA-256 18c2cecfde383f2d9b089036521ee29fd04ebb35c670f811d4b4c0d0d0a04527
 zave-2017-how-to-make-chord-correct.pdf
 SHA-256 957ef2cd0963aa07d18a7c2683f2603eacfe4d7cb46b27004dd3c0210072b935
 ```
+
+## 2026-11-27：Chapter 05–09 (P118–P270) 教材核對
+
+已使用 PyMuPDF 抽取並完整閱讀合併講義 P118–P270 共 153 頁文字，並渲染檢視 P127、P134、P145、P150、P151、P170、P171、P177、P205、P207、P208、P230、P235、P257、P265 共 15 張關鍵圖表與異常警告頁。另確認先前紀錄中 P145、P205、P207、P208 的缺失 XObject resource 警告均屬投影片背景裝飾或陰影，文字與技術圖示皆完整可讀。本次環境僅有本機 `reference/整包.pdf`，未掛載 `reference/Distributed_Systems_4.pdf`，故新增五章不杜撰原文書頁碼。
+
+| 頁碼 | 對應筆記與實際內容 |
+| --- | --- |
+| P118–P155 | Chapter 05：DSM、交錯數、TOB、Strict/Sequential/Causal/PRAM/Slow 一致性光譜、Sync/CAP/Eventual、ACID（含 Isolation 轉帳反例）、2PL/OCC/MVCC、2PC 與並行控制正交整合 |
+| P156–P182 | Chapter 06：外部記憶體模型、B+ Tree 寫入放大、LSM-Tree 讀寫路徑、WAL Group Commit 雙觸發、Skip List/CAS、MANIFEST 與 Bloom Filter（無偽陰性/偽陽性）、Compaction Min-Heap、RUM Conjecture、HBase 寬欄模型、Regions、`.META.` 路由與快取、HMaster/ZooKeeper 與單列強一致 |
+| P183–P210 | Chapter 07：HDD 物理極限、傳統配置與 UFS Inode、HDFS NameNode/DataNodes/副本放置與小檔案記憶體瓶頸、MapReduce/WordCount/Combiner/Shuffle、YARN 解耦與 Capacity/Fair/DRF/Hazard Rate（Exponential vs Pareto DFR）、Spark RDD/Lazy Execution/Lineage 容錯與 Narrow vs Wide |
+| P211–P238 | Chapter 08：Batch vs Stream、Pub/Sub、Kafka Brokers/Partitions/TOB、ZooKeeper/KRaft 與 ISR/`acks`、Consumer Groups、有狀態串流與 Chandy-Lamport 理論連結、Sequential I/O/Page Cache/`sendfile()` Zero-Copy、Processor Topology/KStream/KTable、RocksDB State Store 與 Changelog 狀態還原、Kafka Connect |
+| P239–P270 | Chapter 09：去中心化帳本與五域讀寫流、ECC/ECDSA 與 `ethers.js`、Light/Full/Miner 節點分類、Gossip/Mempool/Gas、PoW Nonce 與 PoS 演進、區塊鏈結構/儲存分層/Merkle Tree、PoW 分叉與最長鏈原則、篡改拒絕、Block Height Watermark 與 Headers-First Sync、Smart Contract 託管/被動觸發（無 Cron Job）/確定性執行、Ledger vs World State、公/私/聯盟鏈比較 |
+
+### 本批需區別的課堂簡化與技術邊界
+
+1. P126 將 Strict Consistency 與 Linearizability 並列，正文區分理論絕對時鐘與區間線性化。
+2. P154 的 2PC+OCC 在 Phase 1 執行本地驗證、Phase 2 執行更新；正文補出 Phase 1 與 Phase 2 空窗期間仍需鎖定或序列化保護。
+3. P160 以頁面級更新解釋 B+ Tree 寫入放大；正文同時說明 LSM-Tree 背景 Compaction 的合併寫入放大。P177–P179 沿用 `.META.` 命名並註明 HBase 0.96+ 更名為 `hbase:meta`。
+4. P193 以單物件 150 bytes 估算 NameNode 記憶體下界；正文另註實務上還含 Block 物件與副本映射開銷。P201 保留 Capacity Scheduler 不搶佔基本敘述並補註新版可配置搶佔。
+5. P220/P222 將 `acks=all` 類比 ISR 多數確認；正文補註生產環境須配 `min.insync.replicas` 防止單節點 ISR 退化。P230 補註 `sendfile()` 在軟體 TLS 加密或格式轉換下的限制。
+6. P257–P258 區分正常分叉與密碼學篡改拒絕；正文補出 PoW 機率性最終性、51% 算力假設與 Smart Contract 透過 Oracle 取得確定性外部資料的邊界。

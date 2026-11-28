@@ -4,7 +4,7 @@
 
 課程講義 National Cheng Kung University, Prof. Hung-Chang Hsiao, Distributed Systems, Fall 2026. 本機教材`reference/整包.pdf` 共 270 頁; 所有課程 P1–P270 均指此檔 **1-based 實體頁碼**, 不採各 deck 頁尾的局部編號.
 
-使用者已確認的閱讀進度為 **P1–P62 已學習, P63 為待閱讀起點**. Chapter 00–04 均已完成教學改版, 03/04 待閱讀. 每章末尾的對照表列出投影片, 教學主題, 圖解, 算例和銜接問題. 下一個整理單元為 P118 的 Consistency.
+使用者已確認的閱讀進度為 **P1–P62 已學習, P63 為待閱讀起點**. Chapter 00–09 (P1–P270) 均已完成筆記整理, 03–09 待閱讀. 每章末尾的對照表列出投影片, 教學主題, 圖解與算例.
 
 原文書為 van Steen, Tanenbaum 的 *Distributed Systems*, 4th edition, 題名頁 Version 4.03x, 共 685 頁. 教材差異, 來源指紋與頁碼對應見 [教材核對紀錄](../reference/README.md). 原始 PDF 留在本機, 不公開提交.
 
@@ -17,13 +17,13 @@
 | 02 | P41–P62 | [Fault Tolerance, Paxos & Raft](02-fault-tolerance-paxos-raft.md): 協定狀態, 完整訊息路徑, 競爭, Adoption, Raft 日誌安全性 | 已學習/已撰寫 | 待連結 |
 | 03 | P63–P89 | [ZooKeeper](03-zookeeper.md): ZAB, Session, Watch, Lock 與 fencing | 待閱讀/已整理 | 待連結 |
 | 04 | P90–P117 | [P2P & Gossip](04-peer-to-peer-gossip.md): Push/Pull, CAN, Chord, CFS 與安全邊界 | 待閱讀/已整理 | 待連結 |
-| 05 | P118–P155 | Consistency, Replication & Transactions | 待學習/未展開 | 待連結 |
-| 06 | P156–P182 | LevelDB & HBase | 待學習/未展開 | 待連結 |
-| 07 | P183–P210 | HDFS, MapReduce, YARN & Spark | 待學習/未展開 | 待連結 |
-| 08 | P211–P238 | Kafka & Stream Processing | 待學習/未展開 | 待連結 |
-| 09 | P239–P270 | Blockchain Foundations | 待學習/未展開 | 待連結 |
+| 05 | P118–P155 | [Consistency, Replication & Transactions](05-consistency-replication-transactions.md): Sequential Consistency, ACID Isolation, OCC 與 2PC 整合 | 待閱讀/已整理 | 待連結 |
+| 06 | P156–P182 | [LevelDB & HBase](06-leveldb-hbase.md): LSM-Tree 寫入放大, Bloom Filter 無偽陰性, Compaction 與 HBase `.META.` 快取 | 待閱讀/已整理 | 待連結 |
+| 07 | P183–P210 | [HDFS, MapReduce, YARN & Spark](07-hdfs-mapreduce-yarn-spark.md): NameNode 小檔案瓶頸, MapReduce, YARN/DRF 與 Spark RDD Lineage 重算 | 待閱讀/已整理 | 待連結 |
+| 08 | P211–P238 | [Kafka & Stream Processing](08-kafka-stream-processing.md): Partition 全序, ISR, `sendfile()` Zero-Copy 與 Kafka Streams Changelog 狀態還原 | 待閱讀/已整理 | 待連結 |
+| 09 | P239–P270 | [Blockchain Foundations](09-blockchain-foundations.md): ECC, PoW 分叉與最長鏈原則, Smart Contract 被動觸發與確定性執行 | 待閱讀/已整理 | 待連結 |
 
-閱讀順序為 00 → 01 → 02 → 03 → 04; 沒有建立 P118 起的空白章節檔案. 03 的上一章為 02, 下一章為 04; 04 的下一單元 Consistency 仍待展開.
+閱讀順序為 00 → 01 → 02 → 03 → 04 → 05 → 06 → 07 → 08 → 09.
 
 ## 來源層級與算例標示
 
@@ -38,9 +38,14 @@
 
 1. Chapter 00: 課程安排依 P1–P17; P15 明列暫定性, 未宣稱已核對最新公告.
 2. Chapter 01: P18 封面寫 Week 2, P16 課表排在 Week 1, 引用一律依實體頁碼. P24/P26 為同一組訊息箭頭的兩種時鐘; P33 為轉帳 50 的原例. 其他 Domino 推演另標補充.
-3. Chapter 02: P54 的 Phase 3 是課堂 Commit/Learn 表述, 經典核心為 Phase 1/Phase 2. P60 原例為`(10,X)`, `(12,Y)` 為自製案例. Raft 的 Term, RequestVote, AppendEntries, Commit Index 與完整 Safety 條件是 P62 的論文延伸.
+3. Chapter 02: P54 的 Phase 3 是課堂 Commit/Learn 表述, 經典核心為 Phase 1/Phase 2. P60 原例為 `(10,X)`, `(12,Y)` 為自製案例. Raft 的 Term, RequestVote, AppendEntries, Commit Index 與完整 Safety 條件是 P62 的論文延伸.
 4. Chapter 03: P78 的四個 voting servers 需要三票; 兩個 follower ACK 需加上 Leader 自身. P87 的 TCP 失聯與 ZooKeeper Session 到期需區分. P88 的 sync 強保證與 3.9.4 官方文件有差異, 正文保留課堂表述再補充限制. P89 預告 Week 8, 但 PDF 下一份實際為 P90 的 P2P.
 5. Chapter 04: P99–P103 的公式採理想 round 模型, 期望, 近似與訊息成本分開. P107 的 key42 owner 是 N45; finger start 不是現存節點 ID. P112 的可變資料 Paxos 群體另列為延伸, 不冒充原始唯讀 CFS. Chord 原始 maintenance 的一般正確性宣稱另以 Zave 後續研究限定.
+6. Chapter 05: P126 將 Strict Consistency 與 Linearizability 並列; 正文補出絕對物理時間與區間線性化的理論差異. P145 的 PDF XObject 缺失警告經渲染確認僅為裝飾圖元. P154 的 2PC+OCC 保留 Phase 1 驗證與 Phase 2 更新, 並補充兩階段空窗的並發保護邊界.
+7. Chapter 06: P160 以頁面級更新 ($4096/100 \approx 40\times$) 說明 B+ Tree 寫入放大; 正文同時說明 LSM-Tree 背景 Compaction 仍存在合併寫入放大. P177–P179 沿用經典 `.META.` 命名並註明 HBase 0.96+ 更名為 `hbase:meta`.
+8. Chapter 07: P193 以單物件 $150\text{ bytes}$ 估算一年 $\approx 130\text{ GB}$ RAM; 正文另補充實務包含 Block 物件與副本映射的額外開銷. P201 的 Capacity Scheduler 保留講義不搶佔基本特性並註明新版可配置搶佔. P205, P207, P208 的 PDF XObject 警告經渲染確認不影響正文與技術圖.
+9. Chapter 08: P220/P222 將 `acks=all` 類比為 ISR 多數確認; 正文補出實務需搭配 `min.insync.replicas` 防止 ISR 縮減為單節點. P230 的 `sendfile()` 零拷貝另補充 TLS 加密或格式轉換的適用限制.
+10. Chapter 09: P257–P258 區分正常網路分區分叉與惡意篡改拒絕; 正文補出 PoW 機率性最終性與 51% 算力假設邊界, 以及 Smart Contract 需靠 Oracle 取得外部確定性輸入.
 
 ## GitHub 與 HackMD 導覽備援
 
@@ -52,7 +57,12 @@ GitHub 內使用上方相對連結. HackMD 的章節 Note URL 未知, 先保留"
 - [Chapter 02 完整 URL](https://github.com/johnson931128/Distributed-System/blob/main/notes/02-fault-tolerance-paxos-raft.md)
 - [Chapter 03 完整 URL](https://github.com/johnson931128/Distributed-System/blob/main/notes/03-zookeeper.md)
 - [Chapter 04 完整 URL](https://github.com/johnson931128/Distributed-System/blob/main/notes/04-peer-to-peer-gossip.md)
+- [Chapter 05 完整 URL](https://github.com/johnson931128/Distributed-System/blob/main/notes/05-consistency-replication-transactions.md)
+- [Chapter 06 完整 URL](https://github.com/johnson931128/Distributed-System/blob/main/notes/06-leveldb-hbase.md)
+- [Chapter 07 完整 URL](https://github.com/johnson931128/Distributed-System/blob/main/notes/07-hdfs-mapreduce-yarn-spark.md)
+- [Chapter 08 完整 URL](https://github.com/johnson931128/Distributed-System/blob/main/notes/08-kafka-stream-processing.md)
+- [Chapter 09 完整 URL](https://github.com/johnson931128/Distributed-System/blob/main/notes/09-blockchain-foundations.md)
 
 這些是預定的 Repository 文件路徑; 本機 commit 尚未 push 前, 不能假定線上已存在. 每篇新 HackMD Note 應從既有 GitHub 檔案 **Pull**; 不可用空白 Note Push 覆蓋 GitHub.
 
-後續待辦: 使用者閱讀新增兩章; 另獲明確任務後整理 P118 起教材; 建立實際 HackMD 連結; 發布後分別驗證兩平台的表格, 公式, 圖與跨章節導覽. 完整同步與圖片 URL 規則見根目錄`AGENTS.md`.
+後續待辦: 使用者依序閱讀 Chapter 03–09; 建立實際 HackMD 連結; 發布後分別驗證 GitHub 與 HackMD 兩平台的表格, 公式, Mermaid 圖與跨章節導覽. 完整同步與圖片 URL 規則見根目錄 `AGENTS.md`.

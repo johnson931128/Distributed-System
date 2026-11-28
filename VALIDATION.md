@@ -140,3 +140,32 @@ ZooKeeper 部分驗證的是有限隊列、CAS 與前驅消失的教學交錯；
 - `python tools/verify-examples.py` 與 `python tools/verify-coordination-p2p.py` 均通過。涵蓋時間戳、快照守恆、檢查點組合、多數相交、提案採用、Raft 新舊日誌、ZooKeeper 排隊競爭、Gossip 機率、CAN 區域及 Chord 路由。測試範圍是有限算例。
 - GitHub 與 HackMD 的改版畫面均為 `NOT_RUN`。本次只提交本機版本。所有圖以內嵌 Mermaid 或文字呈現，沒有需要遠端載入的 SVG、PNG 或外部圖片。真實叢集部署、故障注入與效能量測同為 `NOT_RUN`。
 - 確認本機教材及 15 份論文 PDF 均受忽略規則保護。P118 起維持待整理。
+
+## 10. 2026-11-27：Chapter 05–09 (P118–P270) 完成整理與本機驗證
+
+依課程講義 `reference/整包.pdf` P118–P270 與課堂標註考點完成剩餘五章筆記：
+
+- `notes/05-consistency-replication-transactions.md`（P118–P155）：涵蓋 Sequential Consistency、ACID 之 Isolation、2PC 結合 OCC 驗證階段與完整一致性光譜及並行控制。
+- `notes/06-leveldb-hbase.md`（P156–P182）：涵蓋 LSM-Tree 降低寫入放大、LevelDB Bloom Filter 無偽陰性、Compaction 與 HBase `.META.` 快取。
+- `notes/07-hdfs-mapreduce-yarn-spark.md`（P183–P210）：涵蓋 HDFS NameNode 小檔案記憶體瓶頸、MapReduce、YARN/DRF/Hazard Rate 與 Spark RDD Lineage 容錯重算。
+- `notes/08-kafka-stream-processing.md`（P211–P238）：涵蓋 Kafka 分區全序、ISR/`acks`、`sendfile()` Zero-Copy 與 Kafka Streams Changelog 狀態還原。
+- `notes/09-blockchain-foundations.md`（P239–P270）：涵蓋 ECC、PoW 分叉與最長鏈原則、Smart Contract 被動觸發與確定性執行、Ledger vs World State。
+
+### 本機實測結果
+
+| 項目 | 結果與界線 |
+| --- | --- |
+| 教材與圖表核對 | 已用 PyMuPDF 抽取並閱讀 P118–P270 全部 153 頁文字；渲染檢視 P127、P134、P145、P150、P151、P170、P171、P177、P205、P207、P208、P230、P235、P257、P265 共 15 張關鍵圖與 XObject 警告頁，確認缺失 XObject 皆屬裝飾元素。 |
+| 有限算例程式 | 執行 `python3 tools/verify-examples.py`、`python3 tools/verify-coordination-p2p.py` 與新增之 `python3 tools/verify-remaining-chapters.py` 皆 PASS（涵蓋 126 種交錯、Isolation 轉帳不變量、2PC+OCC 驗證、MVCC、WA=40.96x、Bloom Filter 無偽陰性與 0.82% 偽陽性率、K-Way Min-Heap、NameNode 131.4 GB/yr、DRF (3,2)、Exponential/Pareto DFR、RDD Lineage 局部重算、Kafka Consumer Group、Changelog 重播、Merkle Proof、PoW Nonce、最長鏈重組與被動合約檢查）。 |
+| Markdown / LaTeX / 連結靜態檢查 | Python 腳本檢查 5 份新筆記與 2 份 README：UTF-8、半形標點、無標題 LaTeX、無 `\operatorname`、粗體與公式分離、公式配對與前後空行、19 張表格欄數一致、58 個相對連結存在、無未關閉圍欄，全部 0 錯誤。 |
+| 練習題與圖解數量 | 新增 25 題英文單選題（每章 5 題，均附 A–D 解析）與 12 張內嵌原創 Mermaid 圖（已移除 `<br/>` HTML 標籤以提高雙平台相容性），每張圖皆附完整文字推演。 |
+| 學習進度保護 | 保持使用者既有進度（P1–P62 已學習），Chapter 03–09 均標示為 `待閱讀/已整理`。 |
+
+### 尚未執行的驗收（誠實標註）
+
+| 項目 | 狀態 | 說明 |
+| --- | --- | --- |
+| Headless 瀏覽器 Mermaid 實際渲染 | `NOT_RUN` | 本次僅完成靜態語法與跨平台安全寫法核對，未於瀏覽器啟動 Mermaid 引擎繪圖驗證。 |
+| GitHub 實際頁面顯示 | `NOT_RUN` | 尚未獲授權 commit / push 至遠端，發布後需逐章檢查 LaTeX 公式、表格與 Mermaid 圖。 |
+| HackMD 實際 Note 顯示 | `NOT_RUN` | 尚無 HackMD Note URL，需從 GitHub 發布後逐篇 Pull 並檢查雙平台呈現。 |
+| 真實叢集 / 節點部署測試 | `NOT_RUN` | 算例程式僅驗證有限數學與流程案例，未部署真實 HBase、HDFS、Spark、Kafka 或區塊鏈節點。 |
